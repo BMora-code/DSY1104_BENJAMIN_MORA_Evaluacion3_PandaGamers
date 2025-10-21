@@ -26,7 +26,7 @@ const Home = () => {
         <div className="container">
           <div className="row align-items-center">
             <div className="col-lg-6">
-              <h1 className="display-4 fw-bold mb-3">Bienvenido a la Tienda React</h1>
+              <h1 className="display-4 fw-bold mb-3">Bienvenido a PandaGamer</h1>
               <p className="lead mb-4">
                 Descubre una amplia variedad de productos de calidad con la mejor experiencia de compra en línea.
               </p>
@@ -92,7 +92,7 @@ const Home = () => {
                   <div className="card-body">
                     <h5 className="card-title">{product.name}</h5>
                     <p className="card-text text-muted">{product.description}</p>
-                    <p className="card-text fw-bold text-primary">${product.price}</p>
+                    <p className="card-text fw-bold text-primary">${product.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</p>
                     <Link to="/productos" className="btn btn-outline-primary">
                       Ver Más
                     </Link>

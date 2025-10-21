@@ -8,8 +8,40 @@ const Productos = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
 
   useEffect(() => {
-    // Cargar productos desde el dataStore
-    setProductos(dataStore.getProducts());
+    const updateProductos = () => {
+      console.log('Actualizando productos en Productos.js...');
+      const allProducts = dataStore.getProducts();
+      const ofertas = dataStore.getOfertas();
+      console.log('Productos totales:', allProducts.length);
+      console.log('Ofertas activas:', ofertas.length);
+
+      // Filtrar productos que NO tienen ofertas activas
+      const productosSinOferta = allProducts.filter(producto => {
+        const tieneOferta = ofertas.some(oferta => parseInt(oferta.productId) === producto.id);
+        if (tieneOferta) {
+          console.log(`Producto ${producto.id} (${producto.name}) tiene oferta, excluyéndolo`);
+        }
+        return !tieneOferta;
+      });
+
+      console.log('Productos sin oferta:', productosSinOferta.length);
+      setProductos(productosSinOferta);
+    };
+
+    // Cargar productos inicialmente
+    updateProductos();
+
+    // Escuchar cambios en las ofertas para actualizar la lista de productos
+    const handleOfertasUpdate = () => {
+      console.log('Evento ofertasUpdated recibido en Productos.js');
+      updateProductos();
+    };
+
+    window.addEventListener('ofertasUpdated', handleOfertasUpdate);
+
+    return () => {
+      window.removeEventListener('ofertasUpdated', handleOfertasUpdate);
+    };
   }, []);
 
   // Filtrar productos basado en búsqueda y categoría
@@ -22,6 +54,13 @@ const Productos = () => {
 
   // Obtener categorías únicas
   const categories = [...new Set(productos.map(p => p.category))];
+
+
+  // Agrupar productos por categoría
+  const productosPorCategoria = categories.reduce((acc, category) => {
+    acc[category] = productos.filter(producto => producto.category === category);
+    return acc;
+  }, {});
 
   return (
     <div className="container mt-4">
@@ -52,14 +91,39 @@ const Productos = () => {
         </div>
       </div>
 
-      {/* Grid de productos */}
-      <div className="row">
-        {filteredProductos.map(producto => (
-          <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <ProductoCard producto={producto} />
-          </div>
-        ))}
-      </div>
+      {/* Mostrar productos por secciones si no hay filtro de categoría */}
+      {selectedCategory === "" ? (
+        categories.map(category => {
+          const productosFiltrados = productosPorCategoria[category].filter(producto =>
+            producto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            producto.description.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
+          if (productosFiltrados.length === 0) return null;
+
+          return (
+            <div key={category} className="mb-5">
+              <h3 className="mb-3">{category}</h3>
+              <div className="row">
+                {productosFiltrados.map(producto => (
+                  <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <ProductoCard producto={producto} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        /* Grid de productos filtrados por categoría */
+        <div className="row">
+          {filteredProductos.map(producto => (
+            <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <ProductoCard producto={producto} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {filteredProductos.length === 0 && (
         <div className="text-center mt-4">

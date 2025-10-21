@@ -4,44 +4,14 @@ const Footer = () => (
   <footer className="bg-dark text-light mt-5 py-4">
     <div className="container">
       <div className="row">
-        <div className="col-lg-4 mb-3">
-          <h5 className="text-primary mb-3">Tienda React</h5>
+        <div className="col-lg-6 mb-3">
+          <h5 className="text-primary mb-3">PandaGamer</h5>
           <p className="mb-0">
             Tu tienda en línea de confianza. Encuentra productos de calidad con la mejor experiencia de compra.
           </p>
         </div>
 
-        <div className="col-lg-4 mb-3">
-          <h6 className="mb-3">Enlaces Rápidos</h6>
-          <ul className="list-unstyled">
-            <li className="mb-2">
-              <a href="/" className="text-light text-decoration-none">
-                <i className="bi bi-chevron-right me-1"></i>
-                Inicio
-              </a>
-            </li>
-            <li className="mb-2">
-              <a href="/productos" className="text-light text-decoration-none">
-                <i className="bi bi-chevron-right me-1"></i>
-                Productos
-              </a>
-            </li>
-            <li className="mb-2">
-              <a href="/carrito" className="text-light text-decoration-none">
-                <i className="bi bi-chevron-right me-1"></i>
-                Carrito
-              </a>
-            </li>
-            <li className="mb-2">
-              <a href="/login" className="text-light text-decoration-none">
-                <i className="bi bi-chevron-right me-1"></i>
-                Iniciar Sesión
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div className="col-lg-4 mb-3">
+        <div className="col-lg-6 mb-3">
           <h6 className="mb-3">Contacto</h6>
           <ul className="list-unstyled">
             <li className="mb-2">

@@ -37,7 +37,7 @@ const ProductoCard = ({ producto }) => {
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">{producto.name || producto.nombre}</h5>
         <p className="card-text text-muted small">{producto.description}</p>
-        <p className="card-text fw-bold text-primary h5">${(producto.price || producto.precio).toLocaleString('es-CL')}</p>
+        <p className="card-text fw-bold text-primary h5">${(producto.price || producto.precio).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</p>
         <div className="mt-auto">
           <span className="badge bg-secondary mb-2">{producto.category}</span>
           <div className="d-grid gap-2">

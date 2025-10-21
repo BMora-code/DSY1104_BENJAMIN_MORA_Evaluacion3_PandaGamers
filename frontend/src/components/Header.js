@@ -21,8 +21,13 @@ const Header = () => {
         <div className="container">
           {/* Logo y título */}
           <Link to="/" className="navbar-brand d-flex align-items-center">
-            <i className="bi bi-shop text-primary me-2" style={{ fontSize: '1.5rem' }}></i>
-            <span className="fw-bold text-primary">Tienda React</span>
+            <img
+              src="/images/Logo Empresa/panda-gamers-esport-mascot-logo-vector.jpg"
+              alt="PandaGamers Logo"
+              className="me-2"
+              style={{ height: '40px', width: 'auto' }}
+            />
+            <span className="fw-bold text-primary">PandaGamers</span>
           </Link>
 
           {/* Botón hamburguesa para móviles */}

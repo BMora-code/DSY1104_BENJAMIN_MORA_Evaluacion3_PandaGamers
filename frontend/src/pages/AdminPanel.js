@@ -12,9 +12,12 @@ const AdminPanel = () => {
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [ofertas, setOfertas] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [editingOferta, setEditingOferta] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showUserForm, setShowUserForm] = useState(false);
+  const [showOfertaForm, setShowOfertaForm] = useState(false);
 
   // Form states
   const [productForm, setProductForm] = useState({
@@ -30,6 +33,11 @@ const AdminPanel = () => {
     username: "",
     password: "",
     role: "user"
+  });
+
+  const [ofertaForm, setOfertaForm] = useState({
+    productId: "",
+    discount: ""
   });
 
   useEffect(() => {
@@ -52,6 +60,7 @@ const AdminPanel = () => {
     setProducts(dataStore.getProducts());
     setUsers(dataStore.getUsers());
     setOrders(dataStore.getOrders());
+    setOfertas(dataStore.getOfertas());
   };
 
   const handleProductSubmit = (e) => {
@@ -137,6 +146,69 @@ const AdminPanel = () => {
     }
   };
 
+  const handleOfertaSubmit = (e) => {
+    e.preventDefault();
+
+    const product = products.find(p => p.id === parseInt(ofertaForm.productId));
+    if (!product) {
+      alert(`Producto con ID ${ofertaForm.productId} no encontrado. Verifica que el ID sea correcto.`);
+      return;
+    }
+
+    const discount = parseInt(ofertaForm.discount);
+    const price = product.price * (1 - discount / 100);
+
+    const ofertaData = {
+      productId: parseInt(ofertaForm.productId),
+      discount: discount,
+      price: price,
+      originalPrice: product.price,
+      productName: product.name,
+      productDescription: product.description,
+      productCategory: product.category,
+      productImage: product.image,
+      productStock: product.stock
+    };
+
+    if (editingOferta) {
+      dataStore.updateOferta(editingOferta.id, ofertaData);
+    } else {
+      dataStore.createOferta(ofertaData);
+    }
+
+    // Forzar recarga de datos inmediatamente
+    loadData();
+    resetOfertaForm();
+
+    // Disparar evento personalizado para actualizar otras páginas
+    window.dispatchEvent(new CustomEvent('ofertasUpdated'));
+  };
+
+  const resetOfertaForm = () => {
+    setOfertaForm({
+      productId: "",
+      discount: ""
+    });
+    setEditingOferta(null);
+    setShowOfertaForm(false);
+  };
+
+  const handleEditOferta = (oferta) => {
+    setEditingOferta(oferta);
+    setOfertaForm({
+      productId: oferta.productId.toString(),
+      discount: oferta.discount.toString()
+    });
+    setShowOfertaForm(true);
+  };
+
+  const handleDeleteOferta = (id) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar esta oferta?")) {
+      dataStore.deleteOferta(id);
+      loadData();
+    }
+  };
+
   if (!user) {
     return <div>Cargando...</div>;
   }
@@ -186,6 +258,15 @@ const AdminPanel = () => {
           >
             <i className="bi bi-receipt me-1"></i>
             Órdenes
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${activeTab === "ofertas" ? "active" : ""}`}
+            onClick={() => setActiveTab("ofertas")}
+          >
+            <i className="bi bi-percent me-1"></i>
+            Ofertas
           </button>
         </li>
       </ul>
@@ -311,7 +392,7 @@ const AdminPanel = () => {
                 <div className="col-md-3">
                   <button
                     className="btn btn-warning w-100 mb-2"
-                    onClick={() => navigate("/ofertas")}
+                    onClick={() => setActiveTab("ofertas")}
                   >
                     <i className="bi bi-percent me-1"></i>
                     Gestionar Ofertas
@@ -446,7 +527,7 @@ const AdminPanel = () => {
                     <td>{product.id}</td>
                     <td>{product.name}</td>
                     <td>{product.category}</td>
-                    <td>${product.price.toLocaleString('es-CL')}</td>
+                    <td>${product.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</td>
                     <td>{product.stock}</td>
                     <td>
                       <button
@@ -594,7 +675,7 @@ const AdminPanel = () => {
                   <tr key={order.id}>
                     <td>{order.id}</td>
                     <td>{order.userId}</td>
-                    <td>${order.total?.toFixed(2) || '0.00'}</td>
+                    <td>${order.total?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0'}</td>
                     <td>{new Date(order.date).toLocaleDateString()}</td>
                     <td>
                       <span className="badge bg-success">{order.status || 'Completada'}</span>
@@ -609,6 +690,141 @@ const AdminPanel = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "ofertas" && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Gestión de Ofertas</h3>
+            <button
+              className="btn btn-warning"
+              onClick={() => setShowOfertaForm(!showOfertaForm)}
+            >
+              {showOfertaForm ? "Cancelar" : "Crear Oferta"}
+            </button>
+          </div>
+
+          {/* Formulario de oferta */}
+          {showOfertaForm && (
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5>{editingOferta ? "Editar Oferta" : "Nueva Oferta"}</h5>
+                <form onSubmit={handleOfertaSubmit}>
+                  <div className="row">
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Producto</label>
+                      <select
+                        className="form-select"
+                        value={ofertaForm.productId}
+                        onChange={(e) => setOfertaForm({...ofertaForm, productId: e.target.value})}
+                        required
+                      >
+                        <option value="">Seleccionar producto</option>
+                        {products
+                          .filter(product => !ofertas.some(oferta => parseInt(oferta.productId) === product.id))
+                          .map(product => (
+                            <option key={product.id} value={product.id}>
+                              ID {product.id} - {product.name} - ${product.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Descuento (%)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        className="form-control"
+                        value={ofertaForm.discount}
+                        onChange={(e) => setOfertaForm({...ofertaForm, discount: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Precio Calculado</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={ofertaForm.productId && ofertaForm.discount ? (() => {
+                          const product = products.find(p => p.id === parseInt(ofertaForm.productId));
+                          if (product) {
+                            const discount = parseInt(ofertaForm.discount) || 0;
+                            const price = product.price * (1 - discount / 100);
+                            return `$${price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+                          }
+                          return '';
+                        })() : ''}
+                        readOnly
+                        placeholder="Selecciona producto y descuento"
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button type="submit" className="btn btn-success">
+                      {editingOferta ? "Actualizar" : "Crear"} Oferta
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={resetOfertaForm}>
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Tabla de ofertas */}
+          <div className="table-responsive">
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Producto</th>
+                  <th>Precio Original</th>
+                  <th>Descuento</th>
+                  <th>Precio Oferta</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ofertas.map(oferta => {
+                  const producto = products.find(p => p.id === oferta.productId);
+                  return (
+                    <tr key={oferta.id}>
+                      <td>{oferta.id}</td>
+                      <td>
+                        {producto ? (
+                          <>
+                            <strong>ID {producto.id}</strong> - {producto.name}
+                          </>
+                        ) : (
+                          <span className="text-danger">Producto no encontrado (ID: {oferta.productId})</span>
+                        )}
+                      </td>
+                      <td>${producto ? producto.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A'}</td>
+                      <td>{oferta.discount}%</td>
+                      <td>${oferta.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-outline-warning me-2"
+                          onClick={() => handleEditOferta(oferta)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleDeleteOferta(oferta.id)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

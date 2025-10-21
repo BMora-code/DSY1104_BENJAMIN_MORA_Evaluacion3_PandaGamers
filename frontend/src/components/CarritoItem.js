@@ -8,7 +8,7 @@ const CarritoItem = ({ item }) => {
     eliminarDelCarrito(item.id);
   };
 
-  const itemTotal = (item.precio * item.cantidad).toFixed(2);
+  const itemTotal = (item.precio * item.cantidad).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   return (
     <div className="d-flex align-items-center border-bottom py-3">
@@ -23,7 +23,7 @@ const CarritoItem = ({ item }) => {
       />
       <div className="flex-grow-1">
         <h6 className="mb-1">{item.nombre}</h6>
-        <p className="text-muted small mb-1">Precio unitario: ${item.precio}</p>
+        <p className="text-muted small mb-1">Precio unitario: ${item.precio.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</p>
         <p className="text-muted small mb-0">Cantidad: {item.cantidad}</p>
       </div>
       <div className="text-end me-3">

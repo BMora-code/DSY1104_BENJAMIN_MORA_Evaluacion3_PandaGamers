@@ -1,26 +1,135 @@
-import React, { useState, useEffect } from "react";
-import ProductoCard from "../components/ProductoCard";
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "../context/CartContext";
 import dataStore from "../data/dataStore";
 
 const Ofertas = () => {
   const [ofertas, setOfertas] = useState([]);
+  const [filteredOfertas, setFilteredOfertas] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const { agregarAlCarrito } = useContext(CartContext);
+  const navigate = useNavigate();
+
+  const handleAddToCart = (e, producto) => {
+    e.stopPropagation(); // Evitar navegación al hacer clic en el botón
+    // Adaptar el formato del producto para el carrito
+    const cartItem = {
+      id: producto.id,
+      nombre: producto.name,
+      precio: producto.price,
+      imagen: producto.image,
+      cantidad: 1
+    };
+    agregarAlCarrito(cartItem);
+  };
+
+  const handleCardClick = (producto) => {
+    navigate(`/productos/${producto.id}`);
+  };
+
+  const handleFilterChange = (filterType) => {
+    setActiveFilter(filterType);
+    let filtered = [...ofertas];
+
+    switch (filterType) {
+      case '20':
+        filtered = ofertas.filter(oferta => oferta.discount > 20);
+        break;
+      case '30':
+        filtered = ofertas.filter(oferta => oferta.discount > 30);
+        break;
+      case 'all':
+      default:
+        filtered = ofertas;
+        break;
+    }
+
+    setFilteredOfertas(filtered);
+  };
 
   useEffect(() => {
-    // Simular productos en oferta (productos con descuento)
-    const allProducts = dataStore.getProducts();
+    const loadOfertas = () => {
+      console.log('Cargando ofertas desde dataStore...');
+      // Obtener ofertas administradas por el admin
+      const ofertasAdmin = dataStore.getOfertas();
+      console.log('Ofertas obtenidas:', ofertasAdmin);
 
-    // Agregar información de descuento a algunos productos
-    const productosConOferta = allProducts.map(product => ({
-      ...product,
-      originalPrice: product.price,
-      discount: Math.floor(Math.random() * 30) + 10, // Descuento aleatorio entre 10-40%
-      price: product.price * (1 - (Math.floor(Math.random() * 30) + 10) / 100)
-    })).filter(product => product.discount > 15); // Solo mostrar productos con descuento > 15%
+      // Obtener productos completos para las ofertas
+      const allProducts = dataStore.getProducts();
+      console.log('Productos disponibles:', allProducts.length);
 
-    setOfertas(productosConOferta);
-    setLoading(false);
-  }, []);
+      const productosConOferta = ofertasAdmin.map(oferta => {
+        const producto = allProducts.find(p => p.id === parseInt(oferta.productId));
+        console.log(`Buscando producto ID ${oferta.productId}:`, producto ? 'Encontrado' : 'No encontrado');
+        if (producto) {
+          return {
+            ...producto,
+            originalPrice: producto.price,
+            discount: oferta.discount,
+            price: oferta.price,
+            ofertaId: oferta.id
+          };
+        } else {
+          // Si el producto no existe, intentar obtener datos del dataStore de ofertas
+          // Esto asume que guardamos toda la información del producto en la oferta
+          return {
+            id: `error-${oferta.id}`,
+            name: oferta.productName || `Producto no encontrado (ID: ${oferta.productId})`,
+            description: oferta.productDescription || 'Este producto ya no está disponible. Contacta al administrador.',
+            price: oferta.price,
+            originalPrice: oferta.originalPrice || oferta.price * (100 / (100 - oferta.discount)),
+            discount: oferta.discount,
+            category: oferta.productCategory || 'Error',
+            image: oferta.productImage || 'https://via.placeholder.com/300x200/dc3545/ffffff?text=Producto+No+Encontrado',
+            stock: oferta.productStock || 0,
+            ofertaId: oferta.id
+          };
+        }
+      });
+
+      console.log('Productos con oferta procesados:', productosConOferta);
+      setOfertas(productosConOferta);
+
+      // Aplicar el filtro activo después de cargar las ofertas
+      let filtered = [...productosConOferta];
+      switch (activeFilter) {
+        case '20':
+          filtered = productosConOferta.filter(oferta => oferta.discount > 20);
+          break;
+        case '30':
+          filtered = productosConOferta.filter(oferta => oferta.discount > 30);
+          break;
+        case 'all':
+        default:
+          filtered = productosConOferta;
+          break;
+      }
+      setFilteredOfertas(filtered);
+      setLoading(false);
+    };
+
+    loadOfertas();
+
+    // Escuchar cambios en las ofertas desde el admin panel
+    const handleOfertasUpdate = () => {
+      console.log('Evento ofertasUpdated recibido, recargando ofertas...');
+      loadOfertas();
+    };
+
+    window.addEventListener('ofertasUpdated', handleOfertasUpdate);
+
+    // Escuchar cambios en las ofertas (simular actualización en tiempo real)
+    const interval = setInterval(() => {
+      console.log('Intervalo: verificando ofertas...');
+      loadOfertas();
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('ofertasUpdated', handleOfertasUpdate);
+      clearInterval(interval);
+    };
+  }, [activeFilter]);
 
   if (loading) {
     return (
@@ -45,7 +154,7 @@ const Ofertas = () => {
             Aprovecha estos descuentos exclusivos en productos seleccionados
           </p>
           <div className="badge bg-warning text-dark fs-6 px-3 py-2">
-            ¡Hasta {Math.max(...ofertas.map(p => p.discount))}% de descuento!
+            ¡Hasta {ofertas.length > 0 ? Math.max(...ofertas.map(p => p.discount)) : 0}% de descuento!
           </div>
         </div>
       </div>
@@ -66,7 +175,7 @@ const Ofertas = () => {
             <div className="card-body">
               <i className="bi bi-cash text-success" style={{ fontSize: '2rem' }}></i>
               <h4 className="card-title text-success">
-                ${Math.min(...ofertas.map(p => p.price)).toFixed(0)}
+                ${ofertas.length > 0 ? Math.min(...ofertas.map(p => p.price)).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '0'}
               </h4>
               <p className="card-text">Precio Más Bajo</p>
             </div>
@@ -77,7 +186,7 @@ const Ofertas = () => {
             <div className="card-body">
               <i className="bi bi-percent text-danger" style={{ fontSize: '2rem' }}></i>
               <h4 className="card-title text-danger">
-                {Math.max(...ofertas.map(p => p.discount))}%
+                {ofertas.length > 0 ? Math.max(...ofertas.map(p => p.discount)) : 0}%
               </h4>
               <p className="card-text">Mayor Descuento</p>
             </div>
@@ -97,22 +206,34 @@ const Ofertas = () => {
       {/* Filtros de ofertas */}
       <div className="d-flex justify-content-center mb-4">
         <div className="btn-group" role="group">
-          <button type="button" className="btn btn-outline-warning active">
-            Todos los Descuentos
+          <button
+            type="button"
+            className={`btn btn-outline-warning ${activeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => handleFilterChange('all')}
+          >
+            Todos los Descuentos ({ofertas.length})
           </button>
-          <button type="button" className="btn btn-outline-warning">
-            Más de 20% OFF
+          <button
+            type="button"
+            className={`btn btn-outline-warning ${activeFilter === '20' ? 'active' : ''}`}
+            onClick={() => handleFilterChange('20')}
+          >
+            Más de 20% OFF ({ofertas.filter(o => o.discount > 20).length})
           </button>
-          <button type="button" className="btn btn-outline-warning">
-            Más de 30% OFF
+          <button
+            type="button"
+            className={`btn btn-outline-warning ${activeFilter === '30' ? 'active' : ''}`}
+            onClick={() => handleFilterChange('30')}
+          >
+            Más de 30% OFF ({ofertas.filter(o => o.discount > 30).length})
           </button>
         </div>
       </div>
 
       {/* Grid de productos en oferta */}
-      {ofertas.length > 0 ? (
+      {filteredOfertas.length > 0 ? (
         <div className="row">
-          {ofertas.map(producto => (
+          {filteredOfertas.map(producto => (
             <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
               <div className="card h-100 border-warning position-relative">
                 {/* Badge de descuento */}
@@ -141,14 +262,14 @@ const Ofertas = () => {
                   <div className="mb-3">
                     <div className="d-flex align-items-center">
                       <span className="text-decoration-line-through text-muted me-2">
-                        ${producto.originalPrice.toFixed(2)}
+                        ${producto.originalPrice.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                       </span>
                       <span className="h5 text-success fw-bold mb-0">
-                        ${producto.price.toFixed(2)}
+                        ${producto.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                       </span>
                     </div>
                     <small className="text-warning fw-bold">
-                      ¡Ahorras ${(producto.originalPrice - producto.price).toFixed(2)}!
+                      ¡Ahorras ${(producto.originalPrice - producto.price).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}!
                     </small>
                   </div>
 
@@ -164,11 +285,15 @@ const Ofertas = () => {
                   <div className="mt-auto d-grid gap-2">
                     <button
                       className="btn btn-warning"
+                      onClick={(e) => handleAddToCart(e, producto)}
                       disabled={producto.stock <= 0}
                     >
-                      {producto.stock > 0 ? '¡Comprar Ahora!' : 'Agotado'}
+                      {producto.stock > 0 ? 'Agregar al Carrito' : 'Agotado'}
                     </button>
-                    <button className="btn btn-outline-warning btn-sm">
+                    <button
+                      className="btn btn-outline-warning btn-sm"
+                      onClick={() => handleCardClick(producto)}
+                    >
                       Ver Detalles
                     </button>
                   </div>
