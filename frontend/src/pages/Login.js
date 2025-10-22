@@ -5,9 +5,12 @@ import dataStore from "../data/dataStore";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true); // true = login, false = register
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("user");
+  const [adminCode, setAdminCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,7 +25,7 @@ const Login = () => {
     try {
       if (isLogin) {
         // Login
-        const user = dataStore.authenticateUser(username, password);
+        const user = dataStore.authenticateUser(email, password);
 
         if (user) {
           login(user);
@@ -32,6 +35,12 @@ const Login = () => {
         }
       } else {
         // Register
+        if (!name.trim()) {
+          setError("El nombre es requerido.");
+          setIsLoading(false);
+          return;
+        }
+
         if (password !== confirmPassword) {
           setError("Las contraseñas no coinciden.");
           setIsLoading(false);
@@ -44,19 +53,38 @@ const Login = () => {
           return;
         }
 
-        // Verificar si el usuario ya existe
-        const existingUser = dataStore.getUsers().find(u => u.username === username);
-        if (existingUser) {
-          setError("El nombre de usuario ya existe.");
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          setError("Por favor ingresa un email válido.");
           setIsLoading(false);
           return;
         }
 
+        // Verificar si el email ya existe
+        const existingUser = dataStore.getUsers().find(u => u.email === email);
+        if (existingUser) {
+          setError("El email ya está registrado.");
+          setIsLoading(false);
+          return;
+        }
+
+        // Validar código de admin si es admin
+        if (role === "admin") {
+          if (adminCode !== "123456789") {
+            setError("Código de administrador inválido.");
+            setIsLoading(false);
+            return;
+          }
+        }
+
         // Crear nuevo usuario
         const newUser = dataStore.createUser({
-          username,
+          username: name.trim(), // Usar el nombre como username
+          email,
           password,
-          role: "user"
+          role,
+          firstName: name.trim() // Guardar también como firstName para compatibilidad
         });
 
         if (newUser) {
@@ -76,104 +104,159 @@ const Login = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="card-title text-center mb-4">
-                {isLogin ? "Iniciar Sesión" : "Registrarse"}
-              </h2>
+    <div style={{ minHeight: '100vh', color: 'var(--text)', paddingTop: '10rem' }}>
+      <div className="container">
+        <div className="row justify-content-center">
+          <div className="col-md-6 col-lg-4">
+            <div className="card shadow" style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}>
+              <div className="card-body">
+                <h2 className="card-title text-center mb-4" style={{ color: 'var(--text)', fontFamily: 'var(--font-head)' }}>
+                  {isLogin ? "Iniciar Sesión" : "Registrarse"}
+                </h2>
 
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="username" className="form-label">Usuario</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    placeholder="Ingresa tu usuario"
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">Contraseña</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Ingresa tu contraseña"
-                  />
-                </div>
-
-                {!isLogin && (
-                  <div className="mb-3">
-                    <label htmlFor="confirmPassword" className="form-label">Confirmar Contraseña</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      placeholder="Confirma tu contraseña"
-                    />
+                {error && (
+                  <div className="alert alert-danger" role="alert" style={{ background: 'var(--surface)', border: '1px solid #FF4500', color: 'var(--text)' }}>
+                    {error}
                   </div>
                 )}
 
-                <div className="d-grid">
+                <form onSubmit={handleSubmit}>
+                   {!isLogin && (
+                     <div className="mb-3">
+                       <label htmlFor="name" className="form-label" style={{ color: 'var(--text)' }}>Nombre</label>
+                       <input
+                         type="text"
+                         className="form-control"
+                         id="name"
+                         value={name}
+                         onChange={(e) => setName(e.target.value)}
+                         required
+                         placeholder="Ingresa tu nombre completo"
+                         style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                       />
+                     </div>
+                   )}
+                   <div className="mb-3">
+                     <label htmlFor="email" className="form-label" style={{ color: 'var(--text)' }}>Email</label>
+                     <input
+                       type="email"
+                       className="form-control"
+                       id="email"
+                       value={email}
+                       onChange={(e) => setEmail(e.target.value)}
+                       required
+                       placeholder="Ingresa tu email"
+                       style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                     />
+                   </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="password" className="form-label" style={{ color: 'var(--text)' }}>Contraseña</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Ingresa tu contraseña"
+                      style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                    />
+                  </div>
+
+                  {!isLogin && (
+                    <>
+                      <div className="mb-3">
+                        <label htmlFor="confirmPassword" className="form-label" style={{ color: 'var(--text)' }}>Confirmar Contraseña</label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="confirmPassword"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          placeholder="Confirma tu contraseña"
+                          style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label" style={{ color: 'var(--text)' }}>Tipo de Cuenta</label>
+                        <select
+                          className="form-select"
+                          value={role}
+                          onChange={(e) => setRole(e.target.value)}
+                          style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                        >
+                          <option value="user">Usuario Normal</option>
+                          <option value="admin">Administrador</option>
+                        </select>
+                      </div>
+
+                      {role === "admin" && (
+                        <div className="mb-3">
+                          <label htmlFor="adminCode" className="form-label" style={{ color: 'var(--text)' }}>Código de Administrador</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            id="adminCode"
+                            value={adminCode}
+                            onChange={(e) => setAdminCode(e.target.value)}
+                            required
+                            placeholder="Ingresa el código de administrador"
+                            style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div className="d-grid">
+                    <button
+                      type="submit"
+                      className="btn-neon"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          {isLogin ? "Iniciando sesión..." : "Registrando..."}
+                        </>
+                      ) : (
+                        isLogin ? "Iniciar Sesión" : "Registrarse"
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="text-center mt-3">
                   <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isLoading}
+                    className="btn btn-link p-0"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setError("");
+                      setName("");
+                      setEmail("");
+                      setPassword("");
+                      setConfirmPassword("");
+                      setRole("user");
+                      setAdminCode("");
+                    }}
+                    style={{ color: 'var(--accent)' }}
                   >
-                    {isLoading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {isLogin ? "Iniciando sesión..." : "Registrando..."}
-                      </>
-                    ) : (
-                      isLogin ? "Iniciar Sesión" : "Registrarse"
-                    )}
+                    {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
                   </button>
                 </div>
-              </form>
 
-              <div className="text-center mt-3">
-                <button
-                  className="btn btn-link p-0"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setError("");
-                    setUsername("");
-                    setPassword("");
-                    setConfirmPassword("");
-                  }}
-                >
-                  {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
-                </button>
+                {isLogin && (
+                  <div className="text-center mt-3">
+                    <small style={{ color: 'var(--text)' }}>
+                      Usuario de prueba: admin@test.com / admin123<br />
+                      Usuario normal: user@test.com / user123
+                    </small>
+                  </div>
+                )}
               </div>
-
-              {isLogin && (
-                <div className="text-center mt-3">
-                  <small className="text-muted">
-                    Usuario de prueba: admin / admin123<br />
-                    Usuario normal: user / user123
-                  </small>
-                </div>
-              )}
             </div>
           </div>
         </div>

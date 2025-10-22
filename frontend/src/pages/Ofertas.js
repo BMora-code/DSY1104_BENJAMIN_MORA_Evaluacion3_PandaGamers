@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { AuthContext } from "../context/AuthContext";
 import dataStore from "../data/dataStore";
 
 const Ofertas = () => {
@@ -9,6 +10,7 @@ const Ofertas = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const { agregarAlCarrito } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleAddToCart = (e, producto) => {
@@ -143,61 +145,92 @@ const Ofertas = () => {
     );
   }
 
-  return (
-    <div className="container mt-4">
-      {/* Header de ofertas */}
-      <div className="text-center mb-5">
-        <div className="ofertas-header py-5 bg-warning bg-opacity-10 rounded">
-          <i className="bi bi-percent text-warning" style={{ fontSize: '3rem' }}></i>
-          <h1 className="display-5 fw-bold text-warning mt-3">¡Ofertas Especiales!</h1>
-          <p className="lead text-muted">
-            Aprovecha estos descuentos exclusivos en productos seleccionados
-          </p>
-          <div className="badge bg-warning text-dark fs-6 px-3 py-2">
-            ¡Hasta {ofertas.length > 0 ? Math.max(...ofertas.map(p => p.discount)) : 0}% de descuento!
+  // Si el usuario tiene descuento DUOC, ocultar la página de ofertas
+  if (user && user.hasDuocDiscount) {
+    return (
+      <div style={{ minHeight: '100vh', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="container">
+          <div className="text-center">
+            <div className="card" style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}>
+              <div className="card-body py-5">
+                <i className="bi bi-star-fill mb-4" style={{ fontSize: '4rem', color: 'var(--accent)' }}></i>
+                <h2 className="card-title mb-3" style={{ color: 'var(--text)', fontFamily: 'var(--font-head)' }}>
+                  ¡Felicitaciones!
+                </h2>
+                <p className="card-text mb-4" style={{ color: 'var(--muted)', fontSize: '1.1rem' }}>
+                  Como estudiante de DUOC UC, tienes acceso a un descuento especial del 20% en todos nuestros productos.
+                </p>
+                <p className="card-text mb-4" style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  El descuento se aplicará automáticamente en tu carrito de compras.
+                </p>
+                <a href="/productos" className="btn-neon btn-lg">
+                  <i className="bi bi-grid me-2"></i>
+                  Explorar Productos
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', color: 'var(--text)' }}>
+      <div className="container mt-4">
+        {/* Header de ofertas */}
+        <div className="text-center mb-5">
+          <div className="ofertas-header py-5 rounded" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <i className="bi bi-percent" style={{ fontSize: '3rem', color: 'var(--accent)' }}></i>
+            <h1 className="display-5 fw-bold mt-3" style={{ color: 'var(--text)', fontFamily: 'var(--font-head)' }}>¡Ofertas Especiales!</h1>
+            <p className="lead" style={{ color: 'var(--muted)' }}>
+              Aprovecha estos descuentos exclusivos en productos seleccionados
+            </p>
+            <div className="badge fs-6 px-3 py-2" style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+              ¡Hasta {ofertas.length > 0 ? Math.max(...ofertas.map(p => p.discount)) : 0}% de descuento!
+            </div>
+          </div>
+        </div>
 
       {/* Estadísticas de ofertas */}
       <div className="row text-center mb-5">
         <div className="col-md-3">
-          <div className="card border-warning">
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
             <div className="card-body">
-              <i className="bi bi-graph-up text-warning" style={{ fontSize: '2rem' }}></i>
-              <h4 className="card-title text-warning">{ofertas.length}</h4>
-              <p className="card-text">Productos en Oferta</p>
+              <i className="bi bi-graph-up" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+              <h4 className="card-title" style={{ color: 'var(--text)' }}>{ofertas.length}</h4>
+              <p className="card-text" style={{ color: 'var(--muted)' }}>Productos en Oferta</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-success">
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
             <div className="card-body">
-              <i className="bi bi-cash text-success" style={{ fontSize: '2rem' }}></i>
-              <h4 className="card-title text-success">
+              <i className="bi bi-cash" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+              <h4 className="card-title" style={{ color: 'var(--text)' }}>
                 ${ofertas.length > 0 ? Math.min(...ofertas.map(p => p.price)).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '0'}
               </h4>
-              <p className="card-text">Precio Más Bajo</p>
+              <p className="card-text" style={{ color: 'var(--muted)' }}>Precio Más Bajo</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-danger">
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
             <div className="card-body">
-              <i className="bi bi-percent text-danger" style={{ fontSize: '2rem' }}></i>
-              <h4 className="card-title text-danger">
+              <i className="bi bi-percent" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+              <h4 className="card-title" style={{ color: 'var(--text)' }}>
                 {ofertas.length > 0 ? Math.max(...ofertas.map(p => p.discount)) : 0}%
               </h4>
-              <p className="card-text">Mayor Descuento</p>
+              <p className="card-text" style={{ color: 'var(--muted)' }}>Mayor Descuento</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-info">
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
             <div className="card-body">
-              <i className="bi bi-clock text-info" style={{ fontSize: '2rem' }}></i>
-              <h4 className="card-title text-info">24h</h4>
-              <p className="card-text">Tiempo Limitado</p>
+              <i className="bi bi-clock" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+              <h4 className="card-title" style={{ color: 'var(--text)' }}>24h</h4>
+              <p className="card-text" style={{ color: 'var(--muted)' }}>Tiempo Limitado</p>
             </div>
           </div>
         </div>
@@ -208,21 +241,21 @@ const Ofertas = () => {
         <div className="btn-group" role="group">
           <button
             type="button"
-            className={`btn btn-outline-warning ${activeFilter === 'all' ? 'active' : ''}`}
+            className={`btn ${activeFilter === 'all' ? 'btn-neon' : 'btn-outline'}`}
             onClick={() => handleFilterChange('all')}
           >
             Todos los Descuentos ({ofertas.length})
           </button>
           <button
             type="button"
-            className={`btn btn-outline-warning ${activeFilter === '20' ? 'active' : ''}`}
+            className={`btn ${activeFilter === '20' ? 'btn-neon' : 'btn-outline'}`}
             onClick={() => handleFilterChange('20')}
           >
             Más de 20% OFF ({ofertas.filter(o => o.discount > 20).length})
           </button>
           <button
             type="button"
-            className={`btn btn-outline-warning ${activeFilter === '30' ? 'active' : ''}`}
+            className={`btn ${activeFilter === '30' ? 'btn-neon' : 'btn-outline'}`}
             onClick={() => handleFilterChange('30')}
           >
             Más de 30% OFF ({ofertas.filter(o => o.discount > 30).length})
@@ -235,10 +268,10 @@ const Ofertas = () => {
         <div className="row">
           {filteredOfertas.map(producto => (
             <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
-              <div className="card h-100 border-warning position-relative">
+              <div className="card h-100 position-relative" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
                 {/* Badge de descuento */}
                 <div className="position-absolute top-0 end-0 m-2">
-                  <span className="badge bg-danger fs-6">
+                  <span className="badge fs-6" style={{ background: '#FF4500', color: 'var(--text)' }}>
                     -{producto.discount}%
                   </span>
                 </div>
@@ -255,28 +288,28 @@ const Ofertas = () => {
                 />
 
                 <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">{producto.name}</h5>
-                  <p className="card-text text-muted small">{producto.description}</p>
+                  <h5 className="card-title" style={{ color: 'var(--text)' }}>{producto.name}</h5>
+                  <p className="card-text small" style={{ color: 'var(--muted)' }}>{producto.description}</p>
 
                   {/* Precios */}
                   <div className="mb-3">
                     <div className="d-flex align-items-center">
-                      <span className="text-decoration-line-through text-muted me-2">
+                      <span className="text-decoration-line-through me-2" style={{ color: 'var(--muted)' }}>
                         ${producto.originalPrice.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                       </span>
-                      <span className="h5 text-success fw-bold mb-0">
+                      <span className="h5 fw-bold mb-0" style={{ color: 'var(--accent)' }}>
                         ${producto.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                       </span>
                     </div>
-                    <small className="text-warning fw-bold">
+                    <small className="fw-bold" style={{ color: 'var(--accent)' }}>
                       ¡Ahorras ${(producto.originalPrice - producto.price).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}!
                     </small>
                   </div>
 
                   {/* Categoría y stock */}
                   <div className="mb-3">
-                    <span className="badge bg-secondary me-2">{producto.category}</span>
-                    <span className={`badge ${producto.stock > 0 ? 'bg-success' : 'bg-danger'}`}>
+                    <span className="badge me-2" style={{ background: 'var(--accent)', color: 'var(--text)' }}>{producto.category}</span>
+                    <span className={`badge ${producto.stock > 0 ? '' : ''}`} style={{ background: producto.stock > 0 ? 'var(--accent)' : '#FF4500', color: 'var(--text)' }}>
                       {producto.stock > 0 ? `Stock: ${producto.stock}` : 'Agotado'}
                     </span>
                   </div>
@@ -284,14 +317,14 @@ const Ofertas = () => {
                   {/* Botones de acción */}
                   <div className="mt-auto d-grid gap-2">
                     <button
-                      className="btn btn-warning"
+                      className="btn-neon"
                       onClick={(e) => handleAddToCart(e, producto)}
                       disabled={producto.stock <= 0}
                     >
                       {producto.stock > 0 ? 'Agregar al Carrito' : 'Agotado'}
                     </button>
                     <button
-                      className="btn btn-outline-warning btn-sm"
+                      className="btn-outline btn-sm"
                       onClick={() => handleCardClick(producto)}
                     >
                       Ver Detalles
@@ -304,19 +337,19 @@ const Ofertas = () => {
         </div>
       ) : (
         <div className="text-center py-5">
-          <i className="bi bi-emoji-frown text-warning" style={{ fontSize: '4rem' }}></i>
-          <h3 className="mt-3 text-muted">No hay ofertas disponibles en este momento</h3>
-          <p className="text-muted">Vuelve pronto para nuevas ofertas especiales.</p>
+          <i className="bi bi-emoji-frown" style={{ fontSize: '4rem', color: 'var(--accent)' }}></i>
+          <h3 className="mt-3" style={{ color: 'var(--muted)' }}>No hay ofertas disponibles en este momento</h3>
+          <p style={{ color: 'var(--muted)' }}>Vuelve pronto para nuevas ofertas especiales.</p>
         </div>
       )}
 
       {/* Call to action */}
-      <div className="text-center mt-5 py-4 bg-light rounded">
-        <h3>¿No encuentras lo que buscas?</h3>
-        <p className="text-muted mb-3">
+      <div className="text-center mt-5 py-4 rounded" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <h3 style={{ color: 'var(--text)' }}>¿No encuentras lo que buscas?</h3>
+        <p className="mb-3" style={{ color: 'var(--muted)' }}>
           Explora nuestro catálogo completo de productos
         </p>
-        <a href="/productos" className="btn btn-primary btn-lg">
+        <a href="/productos" className="btn-neon btn-lg">
           <i className="bi bi-grid me-2"></i>
           Ver Todos los Productos
         </a>
@@ -326,32 +359,33 @@ const Ofertas = () => {
       <div className="row mt-5">
         <div className="col-md-4">
           <div className="text-center">
-            <i className="bi bi-truck text-primary mb-3" style={{ fontSize: '2rem' }}></i>
-            <h6>Envío Gratis</h6>
-            <p className="text-muted small">
+            <i className="bi bi-truck mb-3" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+            <h6 style={{ color: 'var(--text)' }}>Envío Gratis</h6>
+            <p className="small" style={{ color: 'var(--muted)' }}>
               En compras sobre $50.000 con ofertas
             </p>
           </div>
         </div>
         <div className="col-md-4">
           <div className="text-center">
-            <i className="bi bi-shield-check text-success mb-3" style={{ fontSize: '2rem' }}></i>
-            <h6>Garantía</h6>
-            <p className="text-muted small">
+            <i className="bi bi-shield-check mb-3" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+            <h6 style={{ color: 'var(--text)' }}>Garantía</h6>
+            <p className="small" style={{ color: 'var(--muted)' }}>
               30 días de garantía en productos
             </p>
           </div>
         </div>
         <div className="col-md-4">
           <div className="text-center">
-            <i className="bi bi-headset text-info mb-3" style={{ fontSize: '2rem' }}></i>
-            <h6>Soporte 24/7</h6>
-            <p className="text-muted small">
+            <i className="bi bi-headset mb-3" style={{ fontSize: '2rem', color: 'var(--accent)' }}></i>
+            <h6 style={{ color: 'var(--text)' }}>Soporte 24/7</h6>
+            <p className="small" style={{ color: 'var(--muted)' }}>
               Atención al cliente especializada
             </p>
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

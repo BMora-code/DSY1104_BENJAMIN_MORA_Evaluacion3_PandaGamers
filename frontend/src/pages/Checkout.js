@@ -59,9 +59,11 @@ const Checkout = () => {
   }, [user]);
 
   // Calcular totales
-  const subtotal = cart.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
+  const subtotal = user && user.hasDuocDiscount
+    ? cart.reduce((acc, item) => acc + (Math.round((item.precioOriginal || item.precio || 0) * 0.8) * item.cantidad), 0)
+    : cart.reduce((acc, item) => acc + ((item.precioFinal || item.precio || 0) * item.cantidad), 0);
   const shippingCost = shippingInfo.deliveryOption === "express" ? 5000 : 2500;
-  const iva = (subtotal + shippingCost) * 0.19;
+  const iva = Math.round((subtotal + shippingCost) * 0.19);
   const total = subtotal + shippingCost + iva;
 
   const deliveryOptions = [
@@ -150,10 +152,15 @@ const Checkout = () => {
         }, 2000);
       });
 
-      // Crear orden completa
+      // Crear orden completa con precios finales guardados
       const order = {
-        userId: user ? user.username : "guest",
-        items: cart,
+        userId: user ? user.username : "guest", // Usar username para identificar al usuario
+        items: cart.map(item => ({
+          ...item,
+          precioFinalGuardado: user && user.hasDuocDiscount
+            ? Math.round((item.precioOriginal || item.precio || 0) * 0.8)
+            : (item.precioFinal || item.precio || 0)
+        })),
         shippingInfo: shippingInfo,
         paymentInfo: {
           ...paymentInfo,
@@ -167,10 +174,27 @@ const Checkout = () => {
         deliveryOption: shippingInfo.deliveryOption
       };
 
+      // Actualizar stock de productos antes de crear la orden
+      cart.forEach(item => {
+        const product = dataStore.getProductById(item.id);
+        if (product) {
+          const newStock = product.stock - item.cantidad;
+          dataStore.updateProduct(item.id, { stock: Math.max(0, newStock) });
+        }
+      });
+
       const newOrder = dataStore.createOrder(order);
 
-      // Limpiar carrito
-      cart.forEach(item => eliminarDelCarrito(item.id));
+      // Limpiar carrito completamente (eliminar todos los productos comprados)
+      cart.forEach(item => {
+        for (let i = 0; i < item.cantidad; i++) {
+          eliminarDelCarrito(item.id);
+        }
+      });
+
+      // Notificar a otras partes de la app que las órdenes y productos cambiaron
+      window.dispatchEvent(new CustomEvent('ordersUpdated'));
+      window.dispatchEvent(new CustomEvent('productsUpdated'));
 
       // Redirigir a página de éxito
       navigate(`/checkout/success/${newOrder.id}`);
@@ -451,7 +475,7 @@ const Checkout = () => {
 
         {/* Resumen de compra */}
         <div className="col-lg-4">
-          <div className="card sticky-top">
+          <div className="card" style={{ position: 'sticky', top: '20px' }}>
             <div className="card-header">
               <h5 className="mb-0">Resumen de Compra</h5>
             </div>
@@ -459,7 +483,9 @@ const Checkout = () => {
               {cart.map(item => (
                 <div key={item.id} className="d-flex justify-content-between mb-2">
                   <span>{item.nombre} x{item.cantidad}</span>
-                  <span>${(item.precio * item.cantidad).toLocaleString()}</span>
+                  <span>${(user && user.hasDuocDiscount
+                    ? Math.round((item.precioOriginal || item.precio || 0) * 0.8) * item.cantidad
+                    : (item.precioFinal || item.precio || 0) * item.cantidad).toLocaleString()}</span>
                 </div>
               ))}
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import ProductoCard from "../components/ProductoCard";
 import dataStore from "../data/dataStore";
 
@@ -6,6 +7,7 @@ const Productos = () => {
   const [productos, setProductos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const location = useLocation();
 
   useEffect(() => {
     const updateProductos = () => {
@@ -28,6 +30,13 @@ const Productos = () => {
       setProductos(productosSinOferta);
     };
 
+    // Verificar si hay parámetros de URL para filtrar por categoría
+    const urlParams = new URLSearchParams(location.search);
+    const categoryParam = urlParams.get('cat');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+
     // Cargar productos inicialmente
     updateProductos();
 
@@ -42,7 +51,7 @@ const Productos = () => {
     return () => {
       window.removeEventListener('ofertasUpdated', handleOfertasUpdate);
     };
-  }, []);
+  }, [location.search]);
 
   // Filtrar productos basado en búsqueda y categoría
   const filteredProductos = productos.filter(producto => {
@@ -55,19 +64,26 @@ const Productos = () => {
   // Obtener categorías únicas
   const categories = [...new Set(productos.map(p => p.category))];
 
-
-  // Agrupar productos por categoría
+  // Agrupar productos por categoría (y ordenar por nombre dentro de cada categoría)
   const productosPorCategoria = categories.reduce((acc, category) => {
-    acc[category] = productos.filter(producto => producto.category === category);
+    acc[category] = productos
+      .filter(producto => producto.category === category)
+      .slice() // copia para no mutar el original
+      .sort((a, b) => (a.name || a.nombre).localeCompare(b.name || b.nombre, 'es'));
     return acc;
   }, {});
 
+  // Lista filtrada ordenada (cuando se usa el filtro de categoría)
+  const sortedFilteredProductos = filteredProductos.slice().sort((a, b) =>
+    (a.name || a.nombre).localeCompare(b.name || b.nombre, 'es')
+  );
+
   return (
-    <div className="container mt-4">
+    <div className="container mt-3">
       <h2 className="mb-4">Productos</h2>
 
       {/* Barra de búsqueda y filtros */}
-      <div className="row mb-4">
+      <div className="row mb-3">
         <div className="col-md-6">
           <input
             type="text"
@@ -102,11 +118,11 @@ const Productos = () => {
           if (productosFiltrados.length === 0) return null;
 
           return (
-            <div key={category} className="mb-5">
-              <h3 className="mb-3">{category}</h3>
-              <div className="row">
+            <div key={category} className="mb-3">
+              <h3 className="mb-2">{category}</h3>
+              <div className="row gx-3 gy-3">
                 {productosFiltrados.map(producto => (
-                  <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+                  <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-3 text-start" style={{ paddingLeft: '8px' }}>
                     <ProductoCard producto={producto} />
                   </div>
                 ))}
@@ -115,10 +131,10 @@ const Productos = () => {
           );
         })
       ) : (
-        /* Grid de productos filtrados por categoría */
-        <div className="row">
-          {filteredProductos.map(producto => (
-            <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+        /* Grid de productos filtrados por categoría (ordenado) */
+        <div className="row gx-3 gy-3">
+          {sortedFilteredProductos.map(producto => (
+            <div key={producto.id} className="col-lg-3 col-md-4 col-sm-6 mb-3 text-start" style={{ paddingLeft: '8px' }}>
               <ProductoCard producto={producto} />
             </div>
           ))}

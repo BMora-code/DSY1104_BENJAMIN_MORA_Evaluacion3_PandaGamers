@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { AuthContext } from "../context/AuthContext";
 import dataStore from "../data/dataStore";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { agregarAlCarrito } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,18 @@ const ProductDetail = () => {
               <p className="card-text lead mb-4">{product.description}</p>
 
               <div className="mb-4">
-                <h3 className="text-primary fw-bold">${product.price.toLocaleString('es-CL')}</h3>
+                {user && user.hasDuocDiscount ? (
+                  <div>
+                    <h5 className="text-muted text-decoration-line-through mb-1">
+                      Precio original: ${product.price.toLocaleString('es-CL')}
+                    </h5>
+                    <h3 className="text-success fw-bold">
+                      Precio con descuento DUOC: ${Math.round(product.price * 0.8).toLocaleString('es-CL')} (20% OFF)
+                    </h3>
+                  </div>
+                ) : (
+                  <h3 className="text-primary fw-bold">${product.price.toLocaleString('es-CL')}</h3>
+                )}
               </div>
 
               {product.stock > 0 && (

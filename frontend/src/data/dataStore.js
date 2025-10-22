@@ -3,6 +3,16 @@
 
 class DataStore {
   constructor() {
+    // Cargar datos desde localStorage si existen
+    this.loadFromStorage();
+
+    // Si no hay datos, inicializar con datos por defecto
+    if (!this.products || this.products.length === 0) {
+      this.initializeDefaultData();
+    }
+  }
+
+  initializeDefaultData() {
     this.products = [
       // Accesorios
       {
@@ -355,9 +365,38 @@ class DataStore {
     ];
 
     this.orders = [];
-
-    // Ofertas administradas por el admin
     this.ofertas = [];
+
+    // Guardar datos iniciales en localStorage
+    this.saveToStorage();
+  }
+
+  // Métodos para persistencia en localStorage
+  saveToStorage() {
+    try {
+      localStorage.setItem('dataStore_products', JSON.stringify(this.products));
+      localStorage.setItem('dataStore_users', JSON.stringify(this.users));
+      localStorage.setItem('dataStore_orders', JSON.stringify(this.orders));
+      localStorage.setItem('dataStore_ofertas', JSON.stringify(this.ofertas));
+    } catch (error) {
+      console.warn('Error saving to localStorage:', error);
+    }
+  }
+
+  loadFromStorage() {
+    try {
+      const products = localStorage.getItem('dataStore_products');
+      const users = localStorage.getItem('dataStore_users');
+      const orders = localStorage.getItem('dataStore_orders');
+      const ofertas = localStorage.getItem('dataStore_ofertas');
+
+      if (products) this.products = JSON.parse(products);
+      if (users) this.users = JSON.parse(users);
+      if (orders) this.orders = JSON.parse(orders);
+      if (ofertas) this.ofertas = JSON.parse(ofertas);
+    } catch (error) {
+      console.warn('Error loading from localStorage:', error);
+    }
   }
 
   // Operaciones CRUD para productos
@@ -369,6 +408,7 @@ class DataStore {
       ...product
     };
     this.products.push(newProduct);
+    this.saveToStorage();
     return newProduct;
   }
 
@@ -390,6 +430,7 @@ class DataStore {
     const index = this.products.findIndex(product => product.id === id);
     if (index !== -1) {
       this.products[index] = { ...this.products[index], ...updatedProduct };
+      this.saveToStorage();
       return this.products[index];
     }
     return null;
@@ -399,7 +440,9 @@ class DataStore {
   deleteProduct(id) {
     const index = this.products.findIndex(product => product.id === id);
     if (index !== -1) {
-      return this.products.splice(index, 1)[0];
+      const deleted = this.products.splice(index, 1)[0];
+      this.saveToStorage();
+      return deleted;
     }
     return null;
   }
@@ -408,11 +451,28 @@ class DataStore {
 
   // CREATE
   createUser(user) {
+    // Asignar ID basado en el rol
+    let nextId = 1;
+    if (user.role === 'admin') {
+      // Para admins, encontrar el ID más alto entre admins
+      const admins = this.users.filter(u => u.role === 'admin');
+      if (admins.length > 0) {
+        nextId = Math.max(...admins.map(u => u.id)) + 1;
+      }
+    } else {
+      // Para usuarios normales, encontrar el ID más alto entre usuarios normales
+      const normalUsers = this.users.filter(u => u.role !== 'admin');
+      if (normalUsers.length > 0) {
+        nextId = Math.max(...normalUsers.map(u => u.id)) + 1;
+      }
+    }
+
     const newUser = {
-      id: this.users.length + 1,
+      id: nextId,
       ...user
     };
     this.users.push(newUser);
+    this.saveToStorage();
     return newUser;
   }
 
@@ -434,6 +494,7 @@ class DataStore {
     const index = this.users.findIndex(user => user.id === id);
     if (index !== -1) {
       this.users[index] = { ...this.users[index], ...updatedUser };
+      this.saveToStorage();
       return this.users[index];
     }
     return null;
@@ -443,7 +504,23 @@ class DataStore {
   deleteUser(id) {
     const index = this.users.findIndex(user => user.id === id);
     if (index !== -1) {
-      return this.users.splice(index, 1)[0];
+      const deleted = this.users.splice(index, 1)[0];
+
+      // Reorganizar IDs solo dentro del mismo rol
+      if (deleted.role === 'admin') {
+        const admins = this.users.filter(u => u.role === 'admin');
+        admins.forEach((user, idx) => {
+          user.id = idx + 1;
+        });
+      } else {
+        const normalUsers = this.users.filter(u => u.role !== 'admin');
+        normalUsers.forEach((user, idx) => {
+          user.id = idx + 1;
+        });
+      }
+
+      this.saveToStorage();
+      return deleted;
     }
     return null;
   }
@@ -458,6 +535,7 @@ class DataStore {
       date: new Date().toISOString()
     };
     this.orders.push(newOrder);
+    this.saveToStorage();
     return newOrder;
   }
 
@@ -479,6 +557,7 @@ class DataStore {
     const index = this.orders.findIndex(order => order.id === id);
     if (index !== -1) {
       this.orders[index] = { ...this.orders[index], ...updatedOrder };
+      this.saveToStorage();
       return this.orders[index];
     }
     return null;
@@ -488,7 +567,9 @@ class DataStore {
   deleteOrder(id) {
     const index = this.orders.findIndex(order => order.id === id);
     if (index !== -1) {
-      return this.orders.splice(index, 1)[0];
+      const deleted = this.orders.splice(index, 1)[0];
+      this.saveToStorage();
+      return deleted;
     }
     return null;
   }
@@ -518,6 +599,7 @@ class DataStore {
       ...oferta
     };
     this.ofertas.push(newOferta);
+    this.saveToStorage();
     return newOferta;
   }
 
@@ -535,6 +617,7 @@ class DataStore {
     const index = this.ofertas.findIndex(oferta => oferta.id === id);
     if (index !== -1) {
       this.ofertas[index] = { ...this.ofertas[index], ...updatedOferta };
+      this.saveToStorage();
       return this.ofertas[index];
     }
     return null;
@@ -544,14 +627,19 @@ class DataStore {
   deleteOferta(id) {
     const index = this.ofertas.findIndex(oferta => oferta.id === id);
     if (index !== -1) {
-      return this.ofertas.splice(index, 1)[0];
+      const deleted = this.ofertas.splice(index, 1)[0];
+      this.saveToStorage();
+      return deleted;
     }
     return null;
   }
 
   // Método para autenticación
-  authenticateUser(username, password) {
-    const user = this.users.find(u => u.username === username && u.password === password);
+  authenticateUser(identifier, password) {
+    // Buscar por username o email
+    const user = this.users.find(u =>
+      (u.username === identifier || u.email === identifier) && u.password === password
+    );
     return user ? { ...user, password: undefined } : null;
   }
 }

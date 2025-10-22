@@ -12,6 +12,9 @@ import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutError from "./pages/CheckoutError";
 import Ofertas from "./pages/Ofertas";
+import Blog from "./pages/Blog";
+import Contacto from "./pages/Contacto";
+import MisCompras from "./pages/MisCompras";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles/global.css";
@@ -33,6 +36,9 @@ function App() {
                 <Route path="/checkout/success/:orderId" element={<CheckoutSuccess />} />
                 <Route path="/checkout/error" element={<CheckoutError />} />
                 <Route path="/ofertas" element={<Ofertas />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/contacto" element={<Contacto />} />
+                <Route path="/mis-compras" element={<MisCompras />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin" element={<AdminPanel />} />
               </Routes>
