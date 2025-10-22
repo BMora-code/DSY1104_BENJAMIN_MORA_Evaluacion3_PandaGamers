@@ -247,10 +247,23 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDeleteUser = (id) => {
+  const handleDeleteUser = (id, fromTab) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
-      dataStore.deleteUser(id);
-      loadData();
+      if (fromTab === 'users') {
+        // Solo eliminar usuarios normales desde la pestaña de usuarios
+        const user = users.find(u => u.id === id);
+        if (user && user.role !== 'admin') {
+          dataStore.deleteUser(id);
+          loadData();
+        }
+      } else if (fromTab === 'admins') {
+        // Solo eliminar administradores desde la pestaña de administradores
+        const user = users.find(u => u.id === id);
+        if (user && user.role === 'admin' && user.username !== 'admin') {
+          dataStore.deleteUser(id);
+          loadData();
+        }
+      }
     }
   };
 
@@ -965,7 +978,7 @@ const AdminPanel = () => {
                           e.target.style.transform = 'scale(1)';
                           e.target.style.boxShadow = '0 0 8px rgba(255,69,0,0.3)';
                         }}
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeleteUser(user.id, 'users')}
                         title="Eliminar usuario"
                       >
                         🗑️ Eliminar
@@ -1401,7 +1414,7 @@ const AdminPanel = () => {
                             e.target.style.transform = 'scale(1)';
                             e.target.style.boxShadow = '0 0 8px rgba(255,69,0,0.3)';
                           }}
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteUser(user.id, 'admins')}
                           title="Eliminar administrador"
                         >
                           🗑️ Eliminar
