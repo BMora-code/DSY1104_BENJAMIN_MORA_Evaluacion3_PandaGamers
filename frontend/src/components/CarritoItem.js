@@ -4,16 +4,22 @@ import { CartContext } from "../context/CartContext";
 const CarritoItem = ({ item }) => {
   const { eliminarDelCarrito } = useContext(CartContext);
   const [currentItem, setCurrentItem] = useState(item);
+  const [quantityToRemove, setQuantityToRemove] = useState(1);
 
   // Actualizar el estado local cuando cambie el item
   useEffect(() => {
     setCurrentItem(item);
   }, [item]);
 
-  const handleRemove = (e) => {
+  const handleRemoveQuantity = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    eliminarDelCarrito(item.id);
+    // Remover la cantidad especificada
+    for (let i = 0; i < quantityToRemove; i++) {
+      eliminarDelCarrito(item.id);
+    }
+    // Resetear a 1 después de remover
+    setQuantityToRemove(1);
   };
 
   const itemTotal = currentItem.tieneDescuentoDuoc
@@ -49,19 +55,37 @@ const CarritoItem = ({ item }) => {
             </p>
           )}
         </div>
-        <p className="small mb-0" style={{ color: 'var(--muted)' }}>Cantidad: {currentItem.cantidad}</p>
+        <p className="small mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--muted)' }}>
+          Cantidad: {currentItem.cantidad}
+          <select
+            value={quantityToRemove}
+            onChange={(e) => setQuantityToRemove(parseInt(e.target.value))}
+            className="form-select form-select-sm"
+            style={{
+              width: '60px',
+              fontSize: '0.75rem',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
+            }}
+          >
+            {Array.from({ length: currentItem.cantidad }, (_, i) => i + 1).map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+          <button
+            className="btn btn-sm"
+            onClick={handleRemoveQuantity}
+            title={`Quitar ${quantityToRemove} unidad(es)`}
+            style={{ border: '1px solid #FF4500', background: 'transparent', color: '#FF4500', padding: '0.125rem 0.25rem' }}
+          >
+            🗑️
+          </button>
+        </p>
       </div>
       <div className="text-end me-3">
         <strong style={{ color: 'var(--accent)' }}>${itemTotal}</strong>
       </div>
-      <button
-        className="btn btn-sm"
-        onClick={handleRemove}
-        title="Eliminar del carrito"
-        style={{ border: '1px solid #FF4500', background: 'transparent', color: '#FF4500' }}
-      >
-        🗑️
-      </button>
     </div>
   );
 };

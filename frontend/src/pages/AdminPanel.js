@@ -25,8 +25,6 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [ofertas, setOfertas] = useState([]);
-  // Estado para usuario restaurado desde localStorage (fallback durante refresh)
-  const [restoredUser, setRestoredUser] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingOferta, setEditingOferta] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
@@ -73,10 +71,10 @@ const AdminPanel = () => {
     const stored = localStorage.getItem('auth_user') || localStorage.getItem('user') || localStorage.getItem('authUser');
     if (stored) {
       try {
-        setRestoredUser(JSON.parse(stored));
+        // No necesitamos setRestoredUser ya que no se usa
+        JSON.parse(stored);
       } catch (err) {
         // Si no es JSON (p.ej. solo token), no podemos extraer usuario -> dejamos null
-        setRestoredUser(null);
       }
     }
   }, []);
@@ -105,10 +103,28 @@ const AdminPanel = () => {
   }, [user, navigate, persistedExists]);
 
   const loadData = () => {
+    // Cargar datos iniciales
     setProducts(dataStore.getProducts());
-    setUsers(dataStore.getUsers());
     setOrders(dataStore.getOrders());
     setOfertas(dataStore.getOfertas());
+
+    // Eliminar usuarios por defecto si existen (nombres: 'admin' o 'user')
+    try {
+      const allUsers = dataStore.getUsers();
+      const defaults = allUsers.filter(u => {
+        const name = (u.username || u.username === 0 ? String(u.username) : '').toLowerCase();
+        return name === 'admin' || name === 'user';
+      });
+      // Borra cada usuario por defecto (si hay) en dataStore
+      defaults.forEach(d => {
+        try { dataStore.deleteUser(d.id); } catch (err) { /* ignore */ }
+      });
+    } catch (err) {
+      // ignore errores de lectura/escritura
+    }
+
+    // Recargar lista de usuarios desde dataStore tras la limpieza
+    setUsers(dataStore.getUsers());
   };
 
   const handleProductSubmit = (e) => {
@@ -382,7 +398,7 @@ const AdminPanel = () => {
           <button
             className={`nav-link ${activeTab === "stock" ? "active" : ""}`}
             onClick={() => setTab("stock")}
-            style={activeTab === "stock" ? { background: 'var(--primary)', color: 'var(--primary-contrast)' } : { color: 'var(--text)' }}
+            style={activeTab === "stock" ? { background: 'var(--primary)', color: 'var,--primary-contrast' } : { color: 'var(--text)' }}
           >
             <i className="bi bi-boxes me-1"></i>
             Stock
@@ -392,7 +408,7 @@ const AdminPanel = () => {
           <button
             className={`nav-link ${activeTab === "admins" ? "active" : ""}`}
             onClick={() => setTab("admins")}
-            style={activeTab === "admins" ? { background: 'var(--primary)', color: 'var(--primary-contrast)' } : { color: 'var(--text)' }}
+            style={activeTab === "admins" ? { background: 'var(--primary)', color: 'var,--primary-contrast' } : { color: 'var(--text)' }}
           >
             <i className="bi bi-shield me-1"></i>
             Administradores
@@ -474,7 +490,7 @@ const AdminPanel = () => {
             </div>
 
             <div className="col-md-6">
-              <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var,--text' }}>
+              <div className="card" style={{ background: 'var(--surface)', border: '1px solid var,--border', color: 'var,--text' }}>
                 <div className="card-header" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', color: 'var,--text' }}>
                   <h5 style={{ color: 'var(--text)' }}>Órdenes Recientes</h5>
                 </div>
@@ -500,7 +516,7 @@ const AdminPanel = () => {
 
           {/* Acciones rápidas */}
           <div className="card mt-4 mb-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var,--text' }}>
-            <div className="card-header" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', color: 'var,--text' }}>
+            <div className="card-header" style={{ background: 'var(--surface)', borderBottom: '1px solid var,--border', color: 'var,--text' }}>
               <h5 style={{ color: 'var(--text)' }}>Acciones Rápidas</h5>
             </div>
             <div className="card-body">
@@ -849,7 +865,7 @@ const AdminPanel = () => {
                       <input
                         type="password"
                         className="form-control"
-                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var,--text' }}
+                        style={{ background: 'var(--surface)', border: '1px solid var,--border', color: 'var,--text' }}
                         value={userForm.confirmPassword}
                         onChange={(e) => setUserForm({...userForm, confirmPassword: e.target.value})}
                         required

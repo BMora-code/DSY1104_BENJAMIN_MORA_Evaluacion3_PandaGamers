@@ -8,40 +8,84 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const { user } = useContext(AuthContext);
 
-  // Cargar carrito desde localStorage al iniciar o cuando cambie el usuario
+  // Cargar carrito desde localStorage al iniciar
   useEffect(() => {
-    if (user) {
-      // Cargar carrito específico del usuario
-      const userCartKey = `cart_${user.id}`;
-      const savedCart = localStorage.getItem(userCartKey);
-      if (savedCart) {
-        try {
-          setCart(JSON.parse(savedCart));
-        } catch (error) {
-          console.warn('Error loading user cart from localStorage:', error);
-          localStorage.removeItem(userCartKey);
-          setCart([]);
+    const loadCart = () => {
+      try {
+        if (user) {
+          // Cargar carrito específico del usuario
+          const userCartKey = `cart_${user.id}`;
+          const savedCart = localStorage.getItem(userCartKey);
+          if (savedCart) {
+            const parsedCart = JSON.parse(savedCart);
+            setCart(parsedCart);
+          } else {
+            // Usuario nuevo, intentar cargar carrito temporal
+            const tempCart = localStorage.getItem('cart_temp');
+            if (tempCart) {
+              const parsedTempCart = JSON.parse(tempCart);
+              setCart(parsedTempCart);
+              // Mover carrito temporal al usuario
+              localStorage.setItem(userCartKey, tempCart);
+              localStorage.removeItem('cart_temp');
+            } else {
+              setCart([]);
+            }
+          }
+        } else {
+          // No hay usuario logueado, cargar carrito temporal
+          const tempCart = localStorage.getItem('cart_temp');
+          if (tempCart) {
+            const parsedTempCart = JSON.parse(tempCart);
+            setCart(parsedTempCart);
+          } else {
+            setCart([]);
+          }
         }
-      } else {
-        // Usuario nuevo, carrito vacío
+      } catch (error) {
+        console.warn('Error loading cart from localStorage:', error);
         setCart([]);
       }
-    } else {
-      // No hay usuario logueado, carrito vacío
-      setCart([]);
-    }
+    };
+
+    // Cargar carrito inmediatamente al montar
+    loadCart();
+
+    // También cargar después de un pequeño delay para asegurar que se cargue correctamente
+    const timeoutId = setTimeout(loadCart, 50);
+
+    return () => clearTimeout(timeoutId);
   }, [user]);
 
   // Guardar carrito en localStorage cuando cambie
   useEffect(() => {
-    if (user) {
-      const userCartKey = `cart_${user.id}`;
-      if (cart.length > 0) {
-        localStorage.setItem(userCartKey, JSON.stringify(cart));
-      } else {
-        localStorage.removeItem(userCartKey);
+    const saveCart = () => {
+      try {
+        if (user) {
+          const userCartKey = `cart_${user.id}`;
+          localStorage.setItem(userCartKey, JSON.stringify(cart));
+        } else {
+          // Usuario no logueado, guardar en carrito temporal
+          localStorage.setItem('cart_temp', JSON.stringify(cart));
+        }
+      } catch (error) {
+        console.warn('Error saving cart to localStorage:', error);
       }
-    }
+    };
+
+    // Guardar inmediatamente
+    saveCart();
+
+    // También guardar después de delays progresivos para asegurar persistencia
+    const timeoutId1 = setTimeout(saveCart, 100);
+    const timeoutId2 = setTimeout(saveCart, 500);
+    const timeoutId3 = setTimeout(saveCart, 1000);
+
+    return () => {
+      clearTimeout(timeoutId1);
+      clearTimeout(timeoutId2);
+      clearTimeout(timeoutId3);
+    };
   }, [cart, user]);
 
   // Actualizar precios del carrito cuando cambien los productos

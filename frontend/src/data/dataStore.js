@@ -349,20 +349,7 @@ class DataStore {
       }
     ];
 
-    this.users = [
-      {
-        id: 1,
-        username: 'admin',
-        password: 'admin123',
-        role: 'admin'
-      },
-      {
-        id: 2,
-        username: 'user',
-        password: 'user123',
-        role: 'user'
-      }
-    ];
+    this.users = [];
 
     this.orders = [];
     this.ofertas = [];
@@ -641,6 +628,45 @@ class DataStore {
       (u.username === identifier || u.email === identifier) && u.password === password
     );
     return user ? { ...user, password: undefined } : null;
+  }
+
+  // Reviews persistence (stored under "reviews" key)
+  _loadReviews() {
+    try {
+      const raw = localStorage.getItem('reviews');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  _saveReviews(reviews) {
+    try {
+      localStorage.setItem('reviews', JSON.stringify(reviews));
+    } catch (e) { /* ignore */ }
+  }
+  getReviews(productId) {
+    const reviews = this._loadReviews();
+    if (typeof productId === 'undefined' || productId === null) return reviews;
+    return reviews.filter(r => r.productId === parseInt(productId));
+  }
+  createReview(review) {
+    const reviews = this._loadReviews();
+    const newReview = {
+      id: Date.now(), // simple id
+      productId: parseInt(review.productId),
+      name: review.name || 'Anónimo',
+      email: review.email || '',
+      rating: parseInt(review.rating) || 5,
+      comment: review.comment || '',
+      date: new Date().toISOString()
+    };
+    reviews.push(newReview);
+    this._saveReviews(reviews);
+    return newReview;
+  }
+  deleteReview(reviewId) {
+    const reviews = this._loadReviews().filter(r => r.id !== reviewId);
+    this._saveReviews(reviews);
   }
 }
 

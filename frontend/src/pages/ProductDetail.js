@@ -41,6 +41,26 @@ const ProductDetail = () => {
     }
   };
 
+  // Cantidad seleccionada en detalle de producto
+  const increment = () => {
+    const max = product?.stock ?? Infinity;
+    setQuantity(q => Math.min(q + 1, max));
+  };
+  const decrement = () => setQuantity(q => Math.max(1, q - 1));
+
+  const handleAddToCartWithQuantity = (e) => {
+    e?.preventDefault();
+    if (!product) return;
+    const item = {
+      id: product.id,
+      nombre: product.name || product.nombre,
+      precio: product.price || product.precio,
+      imagen: product.image || product.imagen,
+      cantidad: quantity
+    };
+    agregarAlCarrito(item);
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -128,43 +148,44 @@ const ProductDetail = () => {
                 )}
               </div>
 
-              {product.stock > 0 && (
-                <div className="mb-4">
-                  <label className="form-label">Cantidad:</label>
-                  <div className="d-flex align-items-center">
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => handleQuantityChange(-1)}
-                      disabled={quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <span className="mx-3 fw-bold">{quantity}</span>
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => handleQuantityChange(1)}
-                      disabled={quantity >= product.stock}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="d-grid gap-2">
+              {/* Selector de cantidad + botón agregar con la cantidad seleccionada */}
+              <div className="d-flex align-items-center gap-2 my-3">
                 <button
-                  className="btn btn-primary btn-lg"
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={decrement}
+                  aria-label="Disminuir cantidad"
+                  disabled={quantity <= 1}
                 >
-                  {product.stock > 0 ? 'Agregar al Carrito' : 'Producto Agotado'}
+                  −
+                </button>
+
+                <input
+                  type="text"
+                  readOnly
+                  value={quantity}
+                  className="form-control text-center"
+                  style={{ width: '60px' }}
+                  aria-label="Cantidad seleccionada"
+                />
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={increment}
+                  aria-label="Aumentar cantidad"
+                  disabled={product && typeof product.stock !== 'undefined' && quantity >= product.stock}
+                >
+                  +
                 </button>
 
                 <button
-                  className="btn btn-outline-primary"
-                  onClick={() => navigate("/productos")}
+                  type="button"
+                  className="btn-neon ms-2"
+                  onClick={handleAddToCartWithQuantity}
+                  disabled={product && product.stock <= 0}
                 >
-                  Continuar Comprando
+                  Agregar al carrito
                 </button>
               </div>
             </div>
