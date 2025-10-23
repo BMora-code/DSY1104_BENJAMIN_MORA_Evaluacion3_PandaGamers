@@ -104,7 +104,60 @@ const Home = () => {
                   <p className="muted">{product.description}</p>
                   <div className="actions">
                     <span className="price">${product.price.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} CLP</span>
-                    <button className="btn-outline" onClick={() => agregarAlCarrito(product)}>Añadir</button>
+                    <button className="btn-outline" onClick={() => {
+                      // Verificar si hay usuario activo
+                      if (!user) {
+                        alert("Debes iniciar sesión para agregar productos al carrito.");
+                        return;
+                      }
+
+                      agregarAlCarrito(product);
+
+                      // Mostrar anuncio personalizado
+                      const anuncio = document.createElement('div');
+                      anuncio.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #39FF14, #FFD700);
+                        color: #000;
+                        padding: 15px 20px;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 20px rgba(57, 255, 20, 0.3);
+                        z-index: 10000;
+                        font-weight: bold;
+                        animation: slideIn 0.5s ease-out;
+                      `;
+                      anuncio.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <span>🛒</span>
+                          <span>"${product.name}" agregado al carrito</span>
+                          <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #000; font-size: 18px; cursor: pointer; margin-left: 10px;">×</button>
+                        </div>
+                      `;
+
+                      // Agregar estilos de animación si no existen
+                      if (!document.getElementById('cart-notification-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'cart-notification-styles';
+                        style.textContent = `
+                          @keyframes slideIn {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                          }
+                        `;
+                        document.head.appendChild(style);
+                      }
+
+                      document.body.appendChild(anuncio);
+
+                      // Auto-remover después de 4 segundos
+                      setTimeout(() => {
+                        if (anuncio.parentElement) {
+                          anuncio.remove();
+                        }
+                      }, 4000);
+                    }}>Añadir</button>
                   </div>
                 </article>
               ))}

@@ -13,10 +13,11 @@ const MisCompras = () => {
       const orders = dataStore.getOrders()
         .filter(order => order.userId === user.username)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .map((order, index) => ({
+        .map((order, index, arr) => ({
           ...order,
-          displayId: index + 1 // Crear ID de display basado en el orden cronológico del usuario
+          displayId: arr.length - index // La más reciente tiene el número más alto
         }));
+      console.log('Órdenes del usuario:', orders.map(o => ({ id: o.id, displayId: o.displayId, date: o.date })));
       setUserOrders(orders);
     }
   }, [user]);
@@ -28,9 +29,9 @@ const MisCompras = () => {
         const orders = dataStore.getOrders()
           .filter(order => order.userId === user.username)
           .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .map((order, index) => ({
+          .map((order, index, arr) => ({
             ...order,
-            displayId: index + 1 // Crear ID de display basado en el orden cronológico del usuario
+            displayId: arr.length - index // La más reciente tiene el número más alto
           }));
         setUserOrders(orders);
       }

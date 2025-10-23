@@ -11,6 +11,56 @@ const Carrito = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("carrito");
 
+  // Verificar si hay usuario activo al cargar el componente
+  useEffect(() => {
+    if (!user) {
+      // Mostrar anuncio personalizado
+      const anuncio = document.createElement('div');
+      anuncio.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #FF4500, #FFD700);
+        color: #000;
+        padding: 20px 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(255, 69, 0, 0.4);
+        z-index: 10000;
+        font-weight: bold;
+        text-align: center;
+        animation: fadeIn 0.5s ease-out;
+      `;
+      anuncio.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+          <span style="font-size: 2rem;">🔒</span>
+          <span style="font-size: 1.2rem;">Debes iniciar sesión para tener tu carrito</span>
+          <button onclick="this.parentElement.parentElement.parentElement.remove(); window.location.href='/login';" style="background: #39FF14; color: #000; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">Ir a Iniciar Sesión</button>
+        </div>
+      `;
+
+      // Agregar estilos de animación
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      document.body.appendChild(anuncio);
+
+      // Redirigir automáticamente después de 3 segundos si no hace clic
+      setTimeout(() => {
+        if (anuncio.parentElement) {
+          anuncio.remove();
+        }
+        navigate('/login');
+      }, 3000);
+    }
+  }, [user, navigate]);
+
   // Verificar si viene desde el dropdown del header
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -20,13 +70,13 @@ const Carrito = () => {
   }, []);
   // Calcular totales en pesos chilenos usando useMemo para optimización
   const { subtotal, iva, total, descuentoDuoc, envio } = React.useMemo(() => {
-    const subtotalCalc = user && user.hasDuocDiscount
-      ? cart.reduce((acc, item) => acc + (Math.round((item.precioOriginal || item.price || item.precio || 0) * 0.8) * item.cantidad), 0)
-      : cart.reduce((acc, item) => acc + ((item.precioFinal || item.price || item.precio || 0) * item.cantidad), 0);
-    const ivaCalc = Math.round(subtotalCalc * 0.19); // 19% IVA, redondeado
+    // Para el subtotal, siempre usar el precio original (sin descuento aplicado)
+    const subtotalCalc = cart.reduce((acc, item) => acc + ((item.precioOriginal || item.price || item.precio || 0) * item.cantidad), 0);
+    const descuentoDuocCalc = user && user.hasDuocDiscount ? Math.round(subtotalCalc * 0.2) : 0;
+    const subtotalConDescuento = user && user.hasDuocDiscount ? subtotalCalc - descuentoDuocCalc : subtotalCalc;
+    const ivaCalc = Math.round(subtotalConDescuento * 0.19); // IVA sobre subtotal con descuento
     const envioCalc = 2500; // Costo de envío fijo en pesos chilenos
-    const totalCalc = subtotalCalc + ivaCalc + envioCalc;
-    const descuentoDuocCalc = user && user.hasDuocDiscount ? cart.reduce((acc, item) => acc + (Math.round((item.precioOriginal || item.price || item.precio || 0) * 0.2) * item.cantidad), 0) : 0;
+    const totalCalc = subtotalConDescuento + ivaCalc + envioCalc;
 
     return {
       subtotal: subtotalCalc,
@@ -65,8 +115,15 @@ const Carrito = () => {
     );
   }
 
-  // Obtener órdenes del usuario actual
-  const userOrders = user ? dataStore.getOrders().filter(order => order.userId === user.id) : [];
+  // Obtener órdenes del usuario actual y ordenarlas por fecha (más recientes primero)
+  const userOrders = user ? dataStore.getOrders()
+    .filter(order => order.userId === user.id)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map((order, index, arr) => ({
+      ...order,
+      displayId: arr.length - index // La más reciente tiene el número más alto
+    }))
+    : [];
 
   return (
     <div style={{ minHeight: '100vh', color: 'var(--text)' }}>
@@ -158,19 +215,15 @@ const Carrito = () => {
 
                     <div className="d-grid gap-2">
                       <Link
-                        to={user ? "/checkout" : "/login"}
+                        to="/checkout"
                         className="btn-neon text-center d-block"
                         onClick={(e) => {
-                          if (cart.length === 0) {
+                          if (!Array.isArray(cart) || cart.length === 0) {
                             e.preventDefault();
                             alert("El carrito está vacío");
                             return;
                           }
-                          if (!user) {
-                            e.preventDefault();
-                            alert("Debes iniciar sesión para realizar la compra");
-                            // El Link ya redirige a /login
-                          }
+                          // No bloqueamos ni forzamos login aquí: permitimos checkout como invitado.
                         }}
                       >
                         Finalizar Compra
@@ -183,13 +236,6 @@ const Carrito = () => {
                         Continuar Comprando
                       </button>
                     </div>
-
-                    {!user && (
-                      <div className="alert mt-3 small" style={{ background: 'var(--surface)', border: '1px solid var(--accent)', color: 'var(--text)' }}>
-                        <i className="bi bi-info-circle me-1"></i>
-                        Debes iniciar sesión para completar tu compra.
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -220,7 +266,7 @@ const Carrito = () => {
                       <div className="card-header" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', color: 'var(--text)' }}>
                         <div className="d-flex justify-content-between align-items-center">
                           <h5 className="mb-0" style={{ fontFamily: 'var(--font-head)', color: 'var(--text)' }}>
-                            Orden #{order.id}
+                            Orden #{order.displayId}
                           </h5>
                           <span className={`badge ${order.status === 'completed' ? 'bg-success' : 'bg-warning'}`}>
                             {order.status === 'completed' ? 'Completada' : order.status}

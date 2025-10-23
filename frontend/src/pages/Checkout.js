@@ -9,20 +9,17 @@ const Checkout = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Verificar autenticación al cargar el componente
+  // Verificar carrito vacío al cargar el componente.
+  // NOTA: NO redirigimos a login aquí para evitar que al refrescar la página
+  // se fuerce el login. Permitimos checkout como invitado; si quieres exigir
+  // login, controla eso de forma explícita en otro lugar.
   useEffect(() => {
-    if (!user) {
-      alert("Debes iniciar sesión para acceder al checkout");
-      navigate("/login");
-      return;
-    }
-
-    if (cart.length === 0) {
+    if (!Array.isArray(cart) || cart.length === 0) {
       alert("El carrito está vacío");
       navigate("/carrito");
       return;
     }
-  }, [user, cart, navigate]);
+  }, [cart, navigate]);
 
   const [shippingInfo, setShippingInfo] = useState({
     firstName: "",
@@ -58,13 +55,13 @@ const Checkout = () => {
     }
   }, [user]);
 
-  // Calcular totales
-  const subtotal = user && user.hasDuocDiscount
-    ? cart.reduce((acc, item) => acc + (Math.round((item.precioOriginal || item.precio || 0) * 0.8) * item.cantidad), 0)
-    : cart.reduce((acc, item) => acc + ((item.precioFinal || item.precio || 0) * item.cantidad), 0);
+  // Calcular totales (igual que en Carrito.js)
+  const subtotal = cart.reduce((acc, item) => acc + ((item.precioOriginal || item.precio || 0) * item.cantidad), 0);
+  const descuentoDuoc = user && user.hasDuocDiscount ? Math.round(subtotal * 0.2) : 0;
+  const subtotalConDescuento = user && user.hasDuocDiscount ? subtotal - descuentoDuoc : subtotal;
   const shippingCost = shippingInfo.deliveryOption === "express" ? 5000 : 2500;
-  const iva = Math.round((subtotal + shippingCost) * 0.19);
-  const total = subtotal + shippingCost + iva;
+  const iva = Math.round(subtotalConDescuento * 0.19); // IVA solo sobre subtotal con descuento
+  const total = subtotalConDescuento + iva + shippingCost; // Mismo orden que carrito: subtotal + IVA + envío
 
   const deliveryOptions = [
     { value: "standard", label: "Envío estándar (2-3 días)", cost: 2500 },
@@ -142,7 +139,7 @@ const Checkout = () => {
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           // Simular fallo aleatorio (30% de probabilidad) o por monto específico
-          const shouldFail = Math.random() < 0.3 || total > 150000; // Falla si supera $150.000
+          const shouldFail = Math.random() < 0.3 || total > 300000; // Falla si supera $300.000
 
           if (shouldFail) {
             reject(new Error("Error en el procesamiento del pago"));
@@ -480,12 +477,17 @@ const Checkout = () => {
               <h5 className="mb-0">Resumen de Compra</h5>
             </div>
             <div className="card-body">
+              {user && user.hasDuocDiscount && (
+                <div className="alert mb-3" style={{ background: 'rgba(57, 255, 20, 0.1)', border: '1px solid var(--accent)', color: 'var(--text)' }}>
+                  <i className="bi bi-star-fill me-2"></i>
+                  ¡Descuento DUOC UC aplicado! 20% OFF en todos los productos
+                </div>
+              )}
+
               {cart.map(item => (
                 <div key={item.id} className="d-flex justify-content-between mb-2">
                   <span>{item.nombre} x{item.cantidad}</span>
-                  <span>${(user && user.hasDuocDiscount
-                    ? Math.round((item.precioOriginal || item.precio || 0) * 0.8) * item.cantidad
-                    : (item.precioFinal || item.precio || 0) * item.cantidad).toLocaleString()}</span>
+                  <span>${((item.precioOriginal || item.precio || 0) * item.cantidad).toLocaleString()}</span>
                 </div>
               ))}
 
@@ -496,14 +498,21 @@ const Checkout = () => {
                 <span>${subtotal.toLocaleString()}</span>
               </div>
 
-              <div className="d-flex justify-content-between mb-2">
-                <span>Envío:</span>
-                <span>${shippingCost.toLocaleString()}</span>
-              </div>
+              {user && user.hasDuocDiscount && descuentoDuoc > 0 && (
+                <div className="d-flex justify-content-between mb-2">
+                  <span style={{ color: 'var(--accent)' }}>Descuento DUOC (20%):</span>
+                  <span style={{ color: 'var(--accent)' }}>-${descuentoDuoc.toLocaleString()}</span>
+                </div>
+              )}
 
               <div className="d-flex justify-content-between mb-2">
                 <span>IVA (19%):</span>
                 <span>${iva.toLocaleString()}</span>
+              </div>
+
+              <div className="d-flex justify-content-between mb-2">
+                <span>Envío:</span>
+                <span>${shippingCost.toLocaleString()}</span>
               </div>
 
               <hr />

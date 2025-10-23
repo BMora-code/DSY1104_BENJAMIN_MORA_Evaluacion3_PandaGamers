@@ -180,19 +180,6 @@ const Login = () => {
                         />
                       </div>
 
-                      <div className="mb-3">
-                        <label className="form-label" style={{ color: 'var(--text)' }}>Tipo de Cuenta</label>
-                        <select
-                          className="form-select"
-                          value={role}
-                          onChange={(e) => setRole(e.target.value)}
-                          style={{ background: 'var(--surface)', border: '2px solid var(--accent)', color: 'var(--text)' }}
-                        >
-                          <option value="user">Usuario Normal</option>
-                          <option value="admin">Administrador</option>
-                        </select>
-                      </div>
-
                       {role === "admin" && (
                         <div className="mb-3">
                           <label htmlFor="adminCode" className="form-label" style={{ color: 'var(--text)' }}>Código de Administrador</label>
@@ -241,6 +228,10 @@ const Login = () => {
                       setConfirmPassword("");
                       setRole("user");
                       setAdminCode("");
+                      // Si hay código de admin, mostrar campos de admin
+                      if (adminCode) {
+                        setRole("admin");
+                      }
                     }}
                     style={{ color: 'var(--accent)' }}
                   >
@@ -248,14 +239,6 @@ const Login = () => {
                   </button>
                 </div>
 
-                {isLogin && (
-                  <div className="text-center mt-3">
-                    <small style={{ color: 'var(--text)' }}>
-                      Usuario de prueba: admin@test.com / admin123<br />
-                      Usuario normal: user@test.com / user123
-                    </small>
-                  </div>
-                )}
               </div>
             </div>
           </div>

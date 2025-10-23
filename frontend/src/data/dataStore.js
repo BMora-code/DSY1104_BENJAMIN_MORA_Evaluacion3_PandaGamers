@@ -10,9 +10,15 @@ class DataStore {
     if (!this.products || this.products.length === 0) {
       this.initializeDefaultData();
     }
+
+    // Asegurar que el admin principal siempre esté presente
+    this.ensureDefaultAdmin();
   }
 
+
   initializeDefaultData() {
+    // No inicializar admin aquí, se hace en ensureDefaultAdmin
+
     this.products = [
       // Accesorios
       {
@@ -88,7 +94,7 @@ class DataStore {
         image: '/images/Consolas/Xbox Series X.jpg',
         stock: 4
       },
-      // Juegos de mesa
+      // Juegos de mesa (corregido: rutas de imagen correctamente terminadas)
       {
         id: 9,
         name: 'Carcassonne',
@@ -489,6 +495,11 @@ class DataStore {
 
   // DELETE
   deleteUser(id) {
+    // No permitir eliminar el admin principal (id: 0)
+    if (id === 0) {
+      return null;
+    }
+
     const index = this.users.findIndex(user => user.id === id);
     if (index !== -1) {
       const deleted = this.users.splice(index, 1)[0];
@@ -628,6 +639,38 @@ class DataStore {
       (u.username === identifier || u.email === identifier) && u.password === password
     );
     return user ? { ...user, password: undefined } : null;
+  }
+
+  // Método para agregar al carrito con cantidad específica
+  addToCart(producto, cantidad) {
+    // Usar el contexto del carrito para agregar con cantidad
+    // Como dataStore no tiene acceso directo al contexto, delegamos al CartContext
+    // Esto se maneja desde ProductDetail.js directamente con el contexto
+    console.log(`Agregando ${cantidad} unidades de ${producto.name} al carrito`);
+  }
+
+  // Asegurar que el admin principal siempre esté presente
+  ensureDefaultAdmin() {
+    const defaultAdmin = {
+      id: 0,
+      name: 'Benja',
+      email: 'ben@gmail.com',
+      username: 'benja',
+      password: 'ben123',
+      role: 'admin'
+    };
+
+    const existingAdmin = this.users.find(u => u.id === 0);
+    if (!existingAdmin) {
+      this.users.unshift(defaultAdmin);
+      this.saveToStorage();
+    } else {
+      // Asegurar que tenga el rol correcto
+      if (existingAdmin.role !== 'admin') {
+        existingAdmin.role = 'admin';
+        this.saveToStorage();
+      }
+    }
   }
 
   // Reviews persistence (stored under "reviews" key)

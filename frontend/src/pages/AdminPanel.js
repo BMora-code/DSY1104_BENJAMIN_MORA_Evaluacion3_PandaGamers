@@ -247,23 +247,14 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDeleteUser = (id, fromTab) => {
+  const handleDeleteUser = (id) => {
+    if (id === 0) {
+      alert("Este usuario no se puede eliminar porque es el administrador principal del sistema.");
+      return;
+    }
     if (window.confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
-      if (fromTab === 'users') {
-        // Solo eliminar usuarios normales desde la pestaña de usuarios
-        const user = users.find(u => u.id === id);
-        if (user && user.role !== 'admin') {
-          dataStore.deleteUser(id);
-          loadData();
-        }
-      } else if (fromTab === 'admins') {
-        // Solo eliminar administradores desde la pestaña de administradores
-        const user = users.find(u => u.id === id);
-        if (user && user.role === 'admin' && user.username !== 'admin') {
-          dataStore.deleteUser(id);
-          loadData();
-        }
-      }
+      dataStore.deleteUser(id);
+      loadData();
     }
   };
 
@@ -511,7 +502,7 @@ const AdminPanel = () => {
                   {orders.slice(-5).reverse().map(order => (
                     <div key={order.id} className="border-bottom pb-2 mb-2" style={{ borderColor: 'var(--border) !important' }}>
                       <small style={{ color: 'var(--muted)' }}>
-                        Orden #{order.id} - ${order.total?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0'}
+                        Orden #{order.displayId} - ${order.total?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0'}
                       </small>
                       <br />
                       <small style={{ color: 'var(--muted)' }}>
@@ -807,12 +798,6 @@ const AdminPanel = () => {
         <div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Gestión de Usuarios</h3>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowUserForm(!showUserForm)}
-            >
-              {showUserForm ? "Cancelar" : "Crear Usuario"}
-            </button>
           </div>
 
           {/* Barra de búsqueda para usuarios */}
@@ -925,13 +910,17 @@ const AdminPanel = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.filter(user => user.role !== 'admin')
+                {users.filter(user => user.role === 'user')
                   .filter(user =>
                     userSearch === "" ||
                     user.id.toString().includes(userSearch.toLowerCase()) ||
                     user.username.toLowerCase().includes(userSearch.toLowerCase())
                   )
-                  .sort((a, b) => a.id - b.id) // Ordenar por ID ascendente
+                  .sort((a, b) => new Date(b.date) - new Date(a.date))
+                  .map((order, index, arr) => ({
+                    ...order,
+                    displayId: arr.length - index
+                  }))
                   .map((user, index) => (
                   <tr key={user.id} style={{
                     background: index % 2 === 0 ? '#121827' : '#0d1f4a',
@@ -978,7 +967,7 @@ const AdminPanel = () => {
                           e.target.style.transform = 'scale(1)';
                           e.target.style.boxShadow = '0 0 8px rgba(255,69,0,0.3)';
                         }}
-                        onClick={() => handleDeleteUser(user.id, 'users')}
+                        onClick={() => handleDeleteUser(user.id)}
                         title="Eliminar usuario"
                       >
                         🗑️ Eliminar
@@ -1414,7 +1403,7 @@ const AdminPanel = () => {
                             e.target.style.transform = 'scale(1)';
                             e.target.style.boxShadow = '0 0 8px rgba(255,69,0,0.3)';
                           }}
-                          onClick={() => handleDeleteUser(user.id, 'admins')}
+                          onClick={() => handleDeleteUser(user.id)}
                           title="Eliminar administrador"
                         >
                           🗑️ Eliminar

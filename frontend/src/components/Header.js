@@ -9,7 +9,9 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const totalItems = cart.reduce((acc, item) => acc + item.cantidad, 0);
+  const totalItems = Array.isArray(cart)
+    ? cart.reduce((acc, item) => acc + (Number(item?.cantidad) || 0), 0)
+    : 0;
 
   const handleLogout = () => {
     logout();
@@ -98,13 +100,14 @@ const Header = () => {
                 boxShadow: '0 0 10px rgba(57, 255, 20, 0.3)'
               }}
             />
-            <span>PandaGamers</span>
+            <span style={{ fontSize: '0.9em', marginLeft: '-10px' }}>PandaGamers</span>
           </Link>
           <nav className="primary-nav" aria-label="Principal">
             <ul className="menu">
               <li><Link to="/" className={`nav-link-hover ${location.pathname === '/' ? 'active' : ''}`} {...(location.pathname === '/' ? {'aria-current': 'page'} : {})}>Inicio</Link></li>
               <li><Link to="/productos" className={`nav-link-hover ${location.pathname === '/productos' ? 'active' : ''}`} {...(location.pathname === '/productos' ? {'aria-current': 'page'} : {})}>Productos</Link></li>
               <li><Link to="/ofertas" className={`nav-link-hover ${location.pathname === '/ofertas' ? 'active' : ''}`} {...(location.pathname === '/ofertas' ? {'aria-current': 'page'} : {})}>Ofertas</Link></li>
+              <li><Link to="/conocenos" className={`nav-link-hover ${location.pathname === '/conocenos' ? 'active' : ''}`} {...(location.pathname === '/conocenos' ? {'aria-current': 'page'} : {})}>Conócenos</Link></li>
               <li><Link to="/blog" className={`nav-link-hover ${location.pathname === '/blog' ? 'active' : ''}`} {...(location.pathname === '/blog' ? {'aria-current': 'page'} : {})}>Blogs</Link></li>
               <li><Link to="/contacto" className={`nav-link-hover ${location.pathname === '/contacto' ? 'active' : ''}`} {...(location.pathname === '/contacto' ? {'aria-current': 'page'} : {})}>Contacto</Link></li>
               <li><Link to="/carrito" className={`nav-link-hover ${location.pathname === '/carrito' ? 'active' : ''}`} {...(location.pathname === '/carrito' ? {'aria-current': 'page'} : {})}>Carrito</Link></li>
@@ -149,6 +152,7 @@ const Header = () => {
                 <li><Link to="/" className={`nav-link-hover ${location.pathname === '/' ? 'active' : ''}`} {...(location.pathname === '/' ? {'aria-current': 'page'} : {})}>Inicio</Link></li>
                 <li><Link to="/productos" className={`nav-link-hover ${location.pathname === '/productos' ? 'active' : ''}`} {...(location.pathname === '/productos' ? {'aria-current': 'page'} : {})}>Productos</Link></li>
                 <li><Link to="/ofertas" className={`nav-link-hover ${location.pathname === '/ofertas' ? 'active' : ''}`} {...(location.pathname === '/ofertas' ? {'aria-current': 'page'} : {})}>Ofertas</Link></li>
+                <li><Link to="/conocenos" className={`nav-link-hover ${location.pathname === '/conocenos' ? 'active' : ''}`} {...(location.pathname === '/conocenos' ? {'aria-current': 'page'} : {})}>Conócenos</Link></li>
                 <li><Link to="/blog" className={`nav-link-hover ${location.pathname === '/blog' ? 'active' : ''}`} {...(location.pathname === '/blog' ? {'aria-current': 'page'} : {})}>Blogs</Link></li>
                 <li><Link to="/contacto" className={`nav-link-hover ${location.pathname === '/contacto' ? 'active' : ''}`} {...(location.pathname === '/contacto' ? {'aria-current': 'page'} : {})}>Contacto</Link></li>
                 <li><Link to="/carrito" className={`nav-link-hover ${location.pathname === '/carrito' ? 'active' : ''}`} {...(location.pathname === '/carrito' ? {'aria-current': 'page'} : {})}>Carrito</Link></li>

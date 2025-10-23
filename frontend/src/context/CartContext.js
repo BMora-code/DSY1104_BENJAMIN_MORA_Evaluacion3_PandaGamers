@@ -1,164 +1,123 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
-import dataStore from "../data/dataStore";
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 
-export const CartContext = createContext();
+export const CartContext = createContext({
+  cart: [],
+  addToCart: () => {},
+  agregarAlCarrito: () => {},
+  removeFromCart: () => {},
+  eliminarDelCarrito: () => {},
+  updateQuantity: () => {},
+  actualizarCantidad: () => {},
+  clearCart: () => {},
+  getTotal: () => 0
+});
+
+const CART_STORAGE_KEY = 'cart';
+
+const loadCart = () => {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+};
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-  const { user } = useContext(AuthContext);
+  const [cart, setCart] = useState(() => loadCart());
 
-  // Cargar carrito desde localStorage al iniciar
+  // Persistir cart cuando cambie
   useEffect(() => {
-    const loadCart = () => {
-      try {
-        if (user) {
-          // Cargar carrito específico del usuario
-          const userCartKey = `cart_${user.id}`;
-          const savedCart = localStorage.getItem(userCartKey);
-          if (savedCart) {
-            const parsedCart = JSON.parse(savedCart);
-            setCart(parsedCart);
-          } else {
-            // Usuario nuevo, intentar cargar carrito temporal
-            const tempCart = localStorage.getItem('cart_temp');
-            if (tempCart) {
-              const parsedTempCart = JSON.parse(tempCart);
-              setCart(parsedTempCart);
-              // Mover carrito temporal al usuario
-              localStorage.setItem(userCartKey, tempCart);
-              localStorage.removeItem('cart_temp');
-            } else {
-              setCart([]);
-            }
-          }
-        } else {
-          // No hay usuario logueado, cargar carrito temporal
-          const tempCart = localStorage.getItem('cart_temp');
-          if (tempCart) {
-            const parsedTempCart = JSON.parse(tempCart);
-            setCart(parsedTempCart);
-          } else {
-            setCart([]);
-          }
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (e) { /* ignore */ }
+  }, [cart]);
+
+  // Sincronizar entre pestañas
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === CART_STORAGE_KEY) {
+        try {
+          setCart(e.newValue ? JSON.parse(e.newValue) : []);
+        } catch (err) {
+          setCart([]);
         }
-      } catch (error) {
-        console.warn('Error loading cart from localStorage:', error);
-        setCart([]);
       }
     };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
-    // Cargar carrito inmediatamente al montar
-    loadCart();
-
-    // También cargar después de un pequeño delay para asegurar que se cargue correctamente
-    const timeoutId = setTimeout(loadCart, 50);
-
-    return () => clearTimeout(timeoutId);
-  }, [user]);
-
-  // Guardar carrito en localStorage cuando cambie
-  useEffect(() => {
-    const saveCart = () => {
-      try {
-        if (user) {
-          const userCartKey = `cart_${user.id}`;
-          localStorage.setItem(userCartKey, JSON.stringify(cart));
-        } else {
-          // Usuario no logueado, guardar en carrito temporal
-          localStorage.setItem('cart_temp', JSON.stringify(cart));
-        }
-      } catch (error) {
-        console.warn('Error saving cart to localStorage:', error);
-      }
-    };
-
-    // Guardar inmediatamente
-    saveCart();
-
-    // También guardar después de delays progresivos para asegurar persistencia
-    const timeoutId1 = setTimeout(saveCart, 100);
-    const timeoutId2 = setTimeout(saveCart, 500);
-    const timeoutId3 = setTimeout(saveCart, 1000);
-
-    return () => {
-      clearTimeout(timeoutId1);
-      clearTimeout(timeoutId2);
-      clearTimeout(timeoutId3);
-    };
-  }, [cart, user]);
-
-  // Actualizar precios del carrito cuando cambien los productos
-  useEffect(() => {
-    const handleProductsUpdated = () => {
-      setCart(prevCart =>
-        prevCart.map(cartItem => {
-          const updatedProduct = dataStore.getProductById(cartItem.id);
-          if (updatedProduct) {
-            // Aplicar descuento DUOC si corresponde
-            const precioFinal = user && user.hasDuocDiscount ? updatedProduct.price * 0.8 : updatedProduct.price;
-
-            return {
-              ...cartItem,
-              name: updatedProduct.name,
-              description: updatedProduct.description,
-              category: updatedProduct.category,
-              image: updatedProduct.image,
-              precioOriginal: updatedProduct.price,
-              precioFinal: precioFinal,
-              tieneDescuentoDuoc: user && user.hasDuocDiscount
-            };
-          }
-          return cartItem;
-        })
-      );
-    };
-
-    // Escuchar el evento de actualización de productos
-    window.addEventListener('productsUpdated', handleProductsUpdated);
-
-    return () => {
-      window.removeEventListener('productsUpdated', handleProductsUpdated);
-    };
-  }, [user]);
-
-  const agregarAlCarrito = (producto) => {
-    // Aplicar descuento DUOC si corresponde
-    const precioFinal = user && user.hasDuocDiscount ? producto.price * 0.8 : producto.price;
-
-    const cartItem = {
-      ...producto,
-      precioOriginal: producto.price,
-      precioFinal: precioFinal,
-      tieneDescuentoDuoc: user && user.hasDuocDiscount
-    };
-
-    const existing = cart.find(item => item.id === producto.id);
-    if (existing) {
-      setCart(cart.map(item => item.id === producto.id ? {...item, cantidad: item.cantidad + 1} : item));
-    } else {
-      setCart([...cart, { ...cartItem, cantidad: 1 }]);
-    }
-  };
-
-  const eliminarDelCarrito = (id) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === id);
-      if (existingItem && existingItem.cantidad > 1) {
-        // Si hay más de 1, reducir la cantidad en 1
-        return prevCart.map(item =>
-          item.id === id ? { ...item, cantidad: item.cantidad - 1 } : item
+  const addToCartInternal = useCallback((product, cantidad = 1) => {
+    setCart(prev => {
+      const exists = prev.find(item => item.id === product.id);
+      if (exists) {
+        return prev.map(item =>
+          item.id === product.id ? { ...item, cantidad: (Number(item.cantidad) || 0) + Number(cantidad) } : item
         );
-      } else {
-        // Si hay solo 1 o no existe, eliminar completamente
-        return prevCart.filter(item => item.id !== id);
       }
+      const newItem = { ...product, cantidad: Number(cantidad) || 1 };
+      return [...prev, newItem];
     });
-  };
+  }, []);
+
+  // Eliminar completamente un item del carrito (borrar todo)
+  const removeFromCart = useCallback((id) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  }, []);
+
+  // Eliminar N unidades de un item. Si la cantidad resultante es 0, se elimina el item.
+  const removeUnitsFromCart = useCallback((id, cantidad = 1) => {
+    setCart(prev => {
+      return prev.reduce((acc, item) => {
+        if (item.id !== id) {
+          acc.push(item);
+          return acc;
+        }
+        const current = Number(item.cantidad) || 0;
+        const newQty = Math.max(0, current - Number(cantidad || 1));
+        if (newQty > 0) {
+          acc.push({ ...item, cantidad: newQty });
+        }
+        return acc;
+      }, []);
+    });
+  }, []);
+
+  const updateQuantity = useCallback((id, cantidad) => {
+    setCart(prev =>
+      prev.map(item => (item.id === id ? { ...item, cantidad: Math.max(0, Number(cantidad) || 0) } : item))
+    );
+  }, []);
+
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const getTotal = useCallback(() =>
+    cart.reduce((sum, item) => sum + (Number(item.price) || item.precio || 0) * (Number(item.cantidad) || 0), 0)
+  , [cart]);
+
+  // Aliases en español para compatibilidad con la base de código
+  const addToCart = addToCartInternal;
+  const agregarAlCarrito = addToCartInternal;
+  // eliminarDelCarrito ahora reduce la cantidad (por defecto 1). Para eliminar todo usar removeFromCart.
+  const eliminarDelCarrito = (id, cantidad = 1) => removeUnitsFromCart(id, cantidad);
+  const actualizarCantidad = (id, cantidad) => updateQuantity(id, cantidad);
 
   return (
-    <CartContext.Provider value={{ cart, agregarAlCarrito, eliminarDelCarrito }}>
+    <CartContext.Provider value={{
+      cart,
+      addToCart,
+      agregarAlCarrito,
+      removeFromCart,
+      eliminarDelCarrito,
+      updateQuantity,
+      actualizarCantidad,
+      clearCart,
+      getTotal
+    }}>
       {children}
     </CartContext.Provider>
   );
 };
+
+export default CartContext;

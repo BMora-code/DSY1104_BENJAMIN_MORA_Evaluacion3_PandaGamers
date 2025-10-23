@@ -14,6 +14,7 @@ import CheckoutError from "./pages/CheckoutError";
 import Ofertas from "./pages/Ofertas";
 import Blog from "./pages/Blog";
 import Contacto from "./pages/Contacto";
+import Conocenos from "./pages/Conocenos";
 import MisCompras from "./pages/MisCompras";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/ofertas" element={<Ofertas />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/contacto" element={<Contacto />} />
+                <Route path="/conocenos" element={<Conocenos />} />
                 <Route path="/mis-compras" element={<MisCompras />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin" element={<AdminPanel />} />

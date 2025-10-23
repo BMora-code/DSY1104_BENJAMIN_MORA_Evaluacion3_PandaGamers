@@ -16,11 +16,23 @@ export function AuthProvider({ children }) {
         console.warn('Error loading user from localStorage:', error);
         localStorage.removeItem('auth_user');
       }
+    } else {
+      // Si no hay usuario guardado, intentar auto-login con admin principal
+      const adminPrincipal = {
+        id: 0,
+        name: 'Benja',
+        email: 'ben@gmail.com',
+        username: 'benja',
+        password: 'ben123',
+        role: 'admin'
+      };
+      setUser(adminPrincipal);
+      localStorage.setItem('auth_user', JSON.stringify(adminPrincipal));
     }
   }, []);
 
   const login = (userData) => {
-    // Verificar si el usuario tiene descuento DUOC
+    // Verificar si el usuario tiene descuento DUOC (solo emails @duocuc.cl)
     const hasDuocDiscount = userData.email && userData.email.toLowerCase().endsWith('@duocuc.cl');
     const userWithDiscount = {
       ...userData,
