@@ -662,6 +662,8 @@ class DataStore {
 
     const existingAdmin = this.users.find(u => u.id === 0);
     if (!existingAdmin) {
+      // Eliminar cualquier admin duplicado antes de agregar el principal
+      this.users = this.users.filter(u => u.id !== 0);
       this.users.unshift(defaultAdmin);
       this.saveToStorage();
     } else {
