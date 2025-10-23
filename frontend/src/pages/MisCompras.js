@@ -143,7 +143,7 @@ const MisCompras = () => {
                               </div>
                             )}
                             <span style={{ color: 'var(--text)', fontWeight: 'bold' }}>
-                              ${(item.precioFinalGuardado || item.precio).toLocaleString('es-CL')}
+                              ${(item.precioFinalGuardado || item.precio || 0).toLocaleString('es-CL')}
                             </span>
                           </div>
                         </div>
