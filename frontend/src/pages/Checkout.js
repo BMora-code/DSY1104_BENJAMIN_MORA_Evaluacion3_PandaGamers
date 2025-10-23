@@ -139,7 +139,7 @@ const Checkout = () => {
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           // Simular fallo aleatorio (30% de probabilidad) o por monto específico
-          const shouldFail = Math.random() < 0.3 || total > 300000; // Falla si supera $300.000
+          const shouldFail = Math.random() < 0.3 || total > 7000000; // Falla si supera $7.000.000
 
           if (shouldFail) {
             reject(new Error("Error en el procesamiento del pago"));
