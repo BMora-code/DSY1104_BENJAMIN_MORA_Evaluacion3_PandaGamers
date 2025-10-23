@@ -1005,11 +1005,14 @@ const AdminPanel = () => {
                   <th style={{ padding: '1rem', fontWeight: '700', border: 'none', fontSize: '0.9rem', background: '#2d3748', color: '#ffffff' }}>Total</th>
                   <th style={{ padding: '1rem', fontWeight: '700', border: 'none', fontSize: '0.9rem', background: '#2d3748', color: '#ffffff' }}>Fecha</th>
                   <th style={{ padding: '1rem', fontWeight: '700', border: 'none', fontSize: '0.9rem', background: '#2d3748', color: '#ffffff' }}>Estado</th>
+                  <th style={{ padding: '1rem', fontWeight: '700', border: 'none', fontSize: '0.9rem', background: '#2d3748', color: '#ffffff' }}>Detalles</th>
                   <th style={{ padding: '1rem', fontWeight: '700', border: 'none', fontSize: '0.9rem', background: '#2d3748', color: '#ffffff' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order, index) => (
+                {orders
+                  .sort((a, b) => a.id - b.id) // Ordenar por ID ascendente (más antiguos primero)
+                  .map((order, index) => (
                   <tr key={order.id} style={{
                     background: index % 2 === 0 ? '#121827' : '#0d1f4a',
                     borderBottom: '1px solid #1e293b',
@@ -1034,6 +1037,118 @@ const AdminPanel = () => {
                       }}>
                         {order.status || 'Completada'}
                       </span>
+                    </td>
+                    <td style={{ padding: '1rem', border: 'none', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{
+                          background: '#39FF14',
+                          color: '#000000',
+                          border: 'none',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 0 8px rgba(57,255,20,0.3)'
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.transform = 'scale(1.05)';
+                          e.target.style.boxShadow = '0 0 12px rgba(57,255,20,0.6)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.boxShadow = '0 0 8px rgba(57,255,20,0.3)';
+                        }}
+                        onClick={() => {
+                          // Mostrar modal con detalles de envío
+                          const shippingDetails = order.shippingInfo || {};
+                          const items = order.items || [];
+                          const modalContent = `
+                            <div style="color: #ffffff; font-family: Arial, sans-serif;">
+                              <h4 style="color: #39FF14; margin-bottom: 1rem;">Detalles de la Orden #${order.id}</h4>
+
+                              <div style="background: #1a1f3a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <h5 style="color: #FFD700; margin-bottom: 0.5rem;">Información de Envío</h5>
+                                <p><strong>Nombre:</strong> ${shippingDetails.firstName || 'N/A'} ${shippingDetails.lastName || ''}</p>
+                                <p><strong>Email:</strong> ${shippingDetails.email || 'N/A'}</p>
+                                <p><strong>Teléfono:</strong> ${shippingDetails.phone || 'N/A'}</p>
+                                <p><strong>Dirección:</strong> ${shippingDetails.address || 'N/A'}</p>
+                                <p><strong>Ciudad:</strong> ${shippingDetails.city || 'N/A'}</p>
+                                <p><strong>Región:</strong> ${shippingDetails.region || 'N/A'}</p>
+                                <p><strong>Código Postal:</strong> ${shippingDetails.postalCode || 'N/A'}</p>
+                              </div>
+
+                              <div style="background: #1a1f3a; padding: 1rem; border-radius: 8px;">
+                                <h5 style="color: #FFD700; margin-bottom: 0.5rem;">Productos</h5>
+                                ${items.map(item => `
+                                  <div style="border-bottom: 1px solid #39FF14; padding: 0.5rem 0;">
+                                    <p><strong>${item.nombre || item.name}</strong> - Cantidad: ${item.cantidad || item.quantity} - Precio: $${((item.precioOriginal || item.precio || item.price || 0) * (item.cantidad || item.quantity)).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0'}</p>
+                                  </div>
+                                `).join('')}
+                                <p style="margin-top: 1rem; font-weight: bold; color: #39FF14;">Total: $${order.total?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/\B(?=(\d{3})+(?!\d))/g, '.') || '0'}</p>
+                              </div>
+                            </div>
+                          `;
+
+                          // Crear modal
+                          const modal = document.createElement('div');
+                          modal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.8);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 9999;
+                          `;
+
+                          const modalContentDiv = document.createElement('div');
+                          modalContentDiv.style.cssText = `
+                            background: #0d1f4a;
+                            padding: 2rem;
+                            border-radius: 12px;
+                            border: 2px solid #39FF14;
+                            max-width: 600px;
+                            max-height: 80vh;
+                            overflow-y: auto;
+                            position: relative;
+                          `;
+
+                          modalContentDiv.innerHTML = modalContent;
+
+                          const closeButton = document.createElement('button');
+                          closeButton.textContent = '✕';
+                          closeButton.style.cssText = `
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            background: #FF4500;
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 30px;
+                            height: 30px;
+                            cursor: pointer;
+                            font-weight: bold;
+                          `;
+
+                          closeButton.onclick = () => document.body.removeChild(modal);
+
+                          modalContentDiv.appendChild(closeButton);
+                          modal.appendChild(modalContentDiv);
+                          modal.onclick = (e) => {
+                            if (e.target === modal) document.body.removeChild(modal);
+                          };
+
+                          document.body.appendChild(modal);
+                        }}
+                      >
+                        👁️ Ver Detalles
+                      </button>
                     </td>
                     <td style={{ padding: '1rem', border: 'none', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>
                       <button
