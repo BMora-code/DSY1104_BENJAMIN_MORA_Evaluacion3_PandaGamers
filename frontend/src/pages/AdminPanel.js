@@ -931,7 +931,7 @@ const AdminPanel = () => {
                     <td style={{ padding: '1rem', color: '#ffffff', border: 'none', fontSize: '0.9rem', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>{user.id}</td>
                     <td style={{ padding: '1rem', color: '#ffffff', border: 'none', fontWeight: '500', fontSize: '0.9rem', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>{user.username}</td>
                     <td style={{ padding: '1rem', color: '#ffffff', border: 'none', fontSize: '0.9rem', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>{user.email || '-'}</td>
-                    <td style={{ padding: '1rem', color: '#ffffff', border: 'none', fontSize: '0.9rem', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>{user.password || '-'}</td>
+                    <td style={{ padding: '1rem', color: '#ffffff', border: 'none', fontSize: '0.9rem', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>{user.password ? '*******' : '-'}</td>
                     <td className="role-cell" style={{ padding: '1rem', border: 'none', background: index % 2 === 0 ? '#121827' : '#0d1f4a' }}>
                       <span style={{
                         color: '#39FF14',
