@@ -1,0 +1,725 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PandaGamers API",
+    "version": "1.0.0",
+    "description": "API REST para PandaGamers - documentación generada con swagger-jsdoc"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Servidor local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "64a1f2e9c2a4f5b6d7e8f901"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Juan Perez"
+          },
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          },
+          "role": {
+            "type": "string",
+            "example": "user"
+          }
+        }
+      },
+      "AuthRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "secret123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJI..."
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "64b2f4a1c3d2e5f678901234"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "PlayStation 4 Pro"
+          },
+          "descripcion": {
+            "type": "string",
+            "example": "Consola usada en buen estado"
+          },
+          "precio": {
+            "type": "number",
+            "example": 349990
+          },
+          "stock": {
+            "type": "integer",
+            "example": 5
+          },
+          "categoria": {
+            "type": "string",
+            "example": "Consolas"
+          },
+          "imagen": {
+            "type": "string",
+            "example": "http://localhost:4000/images/Consolas/ps4pro.jpg"
+          }
+        }
+      },
+      "ProductList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Product"
+        }
+      },
+      "PaymentItem": {
+        "type": "object",
+        "properties": {
+          "productoId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "precio": {
+            "type": "number"
+          },
+          "precioTrasOferta": {
+            "type": "number"
+          },
+          "precioFinalGuardado": {
+            "type": "number"
+          }
+        }
+      },
+      "PaymentRequest": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "shippingCost": {
+            "type": "number"
+          },
+          "shippingInfo": {
+            "type": "object",
+            "properties": {
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "deliveryOption": {
+                "type": "string",
+                "example": "express"
+              }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentItem"
+            }
+          }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "iva": {
+            "type": "number"
+          },
+          "shippingCost": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentItem"
+            }
+          }
+        }
+      },
+      "PaymentResult": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "paymentId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentItem"
+            }
+          },
+          "allSold": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Venta": {
+        "type": "object",
+        "properties": {
+          "producto": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "number"
+          },
+          "precioUnitario": {
+            "type": "number"
+          },
+          "comprador": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "FilteredProducts": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProductList"
+          }
+        }
+      },
+      "StockUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          }
+        }
+      },
+      "SaleCreated": {
+        "type": "object",
+        "properties": {
+          "producto": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "cantidad": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "number"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/payment": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Process a payment (simulated) and persist payment and ventas",
+        "description": "Simula una pasarela de pago con un 20% de probabilidad de fallo. Guarda siempre el intento en la colección `payments` y crea registros en `ventas` tanto para pagos exitosos como para intentos fallidos.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment processed (success or simulated failure)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get payments for authenticated user (admins see all)",
+        "description": "Devuelve los pagos del usuario autenticado. Los usuarios con rol `admin` verán todos los pagos.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payment"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "List products with pagination",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Create a product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Product"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/filter": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Filter products",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nombre",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "precioMin",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "precioMax",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filter result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilteredProducts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{id}/stock": {
+      "patch": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update stock for a product",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stock": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockUpdateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/find": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Find product by exact name (case-insensitive)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Register a new user",
+        "description": "Crea un nuevo usuario y devuelve un token JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created and token returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing fields"
+          },
+          "409": {
+            "description": "Conflict - user exists"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Login user",
+        "description": "Autentica usuario y devuelve token JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing fields"
+          },
+          "401": {
+            "description": "Unauthorized - invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/sales": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Get sales (ventas)",
+        "description": "Devuelve las ventas registradas. Requiere autenticación.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of ventas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Venta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Create a sale (venta)",
+        "description": "Crea una venta y descuenta stock si hay disponibilidad. Requiere autenticación.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "productoId",
+                  "cantidad"
+                ],
+                "properties": {
+                  "productoId": {
+                    "type": "string"
+                  },
+                  "cantidad": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sale created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or stock insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}
